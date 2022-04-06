@@ -1,0 +1,17 @@
+name: verify-image-signatures
+description: DESCRIPTION OF YOUR POLICY
+homepage: POLICY HOMEPAGE URL
+author:
+  name: Flavio Castelli <fcastelli@suse.com>
+  homepage: https://author1.website
+download:
+  # Important: leave the __TAG__ around: this is automatically replaced with the value of the git tag
+  registry: ghcr.io/kubewarden/policies/verify-image-signatures:__TAG__
+  # url is optional
+  url: https://github.com/yourorg/verify-image-signatures/releases/download/__TAG__/policy.wasm
+keywords:
+  - this is freeform
+resources:
+  - Pod
+mutation: false
+contextAware: false

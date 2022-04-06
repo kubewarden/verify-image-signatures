@@ -1,0 +1,19 @@
+rules:
+- apiGroups: [""]
+  apiVersions: ["v1"]
+  resources: ["pods"]
+  operations: ["CREATE"]
+mutating: false
+contextAware: false
+executionMode: kubewarden-wapc
+annotations:
+  io.kubewarden.policy.title: verify-image-signatures
+  io.kubewarden.policy.description: Short description
+  io.kubewarden.policy.author: Flavio Castelli <fcastelli@suse.com>
+  io.kubewarden.policy.url: https://github.com/yourorg/verify-image-signatures
+  io.kubewarden.policy.source: https://github.com/yourorg/verify-image-signatures
+  io.kubewarden.policy.license: Apache-2.0
+  io.kubewarden.policy.usage: |
+    Long explaination.
+
+    **Note well:** this can be Markdown text
