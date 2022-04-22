@@ -2,9 +2,12 @@
 
 ## Description
 
-This policy will validate containers, init container and ephemeral container that matches the name provided 
+This policy validates Sigstore signatures for containers, init container and ephemeral container that matches the name provided 
 in the `image` settings field. It will reject the pod if any validation fails. 
 If all signature validation pass or there is no container that matches the image name, the pod will be accepted.
+
+This policy also mutates matching images to add the image digest, therefore the version of the deployed image can't change. 
+This mutation can be disabled by setting `modifyImagesWithDigest` to `false`
 
 TODO add link to sigstore doc
 
@@ -17,19 +20,22 @@ has an `image` field which will be used to select the matching containers in the
 Example:
 
 ```yaml
+modifyImagesWithDigest: true #optional. default is true
 signatures:
-  - image: "nginx"
-    pub_keys: 
+  - image: "*"
+    pubKeys: 
       - ....
     annotations: #optional
       env: prod
-  - image: "*" #matches all images
+  - image: "ghcr.io/kubewarden/*" #matches all images
     keyless:
       - issuer: "https://token.actions.githubusercontent.com"
         subject: "kubewarden"
     annotations: #optional
       env: prod
 ```
+
+This policy will validate all images with the public keys provided, and images whose name matches `ghcr.io/kubewarden/*` with the keyless provided.
 
 ## License
 

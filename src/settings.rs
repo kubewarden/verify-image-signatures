@@ -5,12 +5,19 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use slog::info;
 
+fn default_as_true() -> bool {
+    true
+}
+
 // Describe the settings your policy expects when
 // loaded by the policy server.
 #[derive(Serialize, Deserialize, Default, Debug)]
 #[serde(default)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct Settings {
     pub(crate) signatures: Vec<Signature>,
+    #[serde(default = "default_as_true")]
+    pub(crate) modify_images_with_digest: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -21,6 +28,7 @@ pub(crate) enum Signature {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct PubKeys {
     pub(crate) image: String,
     pub(crate) pub_keys: Vec<String>,
@@ -63,6 +71,7 @@ mod tests {
                 }],
                 annotations: None,
             })],
+            modify_images_with_digest: true,
         };
 
         assert!(settings.validate().is_ok());
@@ -71,7 +80,10 @@ mod tests {
 
     #[test]
     fn validate_settings_empty_signatures() -> Result<(), ()> {
-        let settings = Settings { signatures: vec![] };
+        let settings = Settings {
+            signatures: vec![],
+            modify_images_with_digest: true,
+        };
 
         assert!(settings.validate().is_err());
         Ok(())

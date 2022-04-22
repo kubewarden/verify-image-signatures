@@ -17,8 +17,8 @@
       ],
       "initContainers": [
         {
-          "image": "nginx",
-          "name": "nginx"
+          "image": "init",
+          "name": "init"
         }
       ]
     }
