@@ -206,6 +206,7 @@ dependencies = [
 [[package]]
 name = "kubewarden-policy-sdk"
 version = "0.3.2"
+source = "git+https://github.com/raulcabello/policy-sdk-rust?branch=sigstore_container_verification#107827f8d8259848534f25eadba1130143c7fbde"
 dependencies = [
  "anyhow",
  "k8s-openapi 0.14.0",
@@ -642,24 +643,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sigstore-policy-test"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "k8s-openapi 0.11.0",
- "kubewarden-policy-sdk",
- "lazy_static",
- "mockall",
- "rstest",
- "serde",
- "serde_json",
- "serial_test",
- "slog",
- "wapc-guest",
- "wildmatch",
-]
-
-[[package]]
 name = "slog"
 version = "2.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -746,6 +729,24 @@ dependencies = [
  "matches",
  "percent-encoding",
  "serde",
+]
+
+[[package]]
+name = "verify-image-signatures"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "k8s-openapi 0.11.0",
+ "kubewarden-policy-sdk",
+ "lazy_static",
+ "mockall",
+ "rstest",
+ "serde",
+ "serde_json",
+ "serial_test",
+ "slog",
+ "wapc-guest",
+ "wildmatch",
 ]
 
 [[package]]

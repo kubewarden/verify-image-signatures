@@ -1,5 +1,5 @@
 [package]
-name = "sigstore-policy-test"
+name = "verify-image-signatures"
 version = "0.1.0"
 authors = ["Flavio Castelli <fcastelli@suse.com>", "raulcabello <raul.cabello@suse.com>","viccuad <vcuadradojuan@suse.de>"]
 edition = "2018"

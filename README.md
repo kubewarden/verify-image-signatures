@@ -27,7 +27,7 @@ signatures:
       - ....
     annotations: #optional
       env: prod
-  - image: "ghcr.io/kubewarden/*" #matches all images
+  - image: "ghcr.io/kubewarden/*" 
     keyless:
       - issuer: "https://token.actions.githubusercontent.com"
         subject: "kubewarden"
