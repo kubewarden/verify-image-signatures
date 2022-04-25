@@ -72,31 +72,27 @@ fn validate(payload: &[u8]) -> CallResult {
     match serde_json::from_value::<apicore::Pod>(validation_request.request.object.clone()) {
         Ok(mut pod) => {
             if let Some(spec) = pod.spec {
-                let mut policy_verification_errors: Vec<String> = vec![];
-                let spec_with_digest = verify_all_images_in_pod(
-                    &spec,
-                    &mut policy_verification_errors,
-                    &validation_request.settings.signatures,
-                );
-
-                return if policy_verification_errors.is_empty() {
-                    if validation_request.settings.modify_images_with_digest {
-                        pod.spec = Some(spec_with_digest);
-                        let mutated_object = serde_json::to_value(&pod)?;
-                        kubewarden::mutate_request(mutated_object)
-                    } else {
-                        kubewarden::accept_request()
+                match verify_all_images_in_pod(&spec, &validation_request.settings.signatures) {
+                    Ok(spec_with_digest) => {
+                        if validation_request.settings.modify_images_with_digest {
+                            pod.spec = Some(spec_with_digest);
+                            let mutated_object = serde_json::to_value(&pod)?;
+                            return kubewarden::mutate_request(mutated_object);
+                        } else {
+                            return kubewarden::accept_request();
+                        }
                     }
-                } else {
-                    kubewarden::reject_request(
-                        Some(format!(
-                            "pod {:?} is not accepted: {}",
-                            &pod.metadata.name,
-                            policy_verification_errors.join(", ")
-                        )),
-                        None,
-                    )
-                };
+                    Err(error) => {
+                        return kubewarden::reject_request(
+                            Some(format!(
+                                "pod {} is not accepted: {}",
+                                &pod.metadata.name.unwrap_or_default(),
+                                error
+                            )),
+                            None,
+                        );
+                    }
+                }
             }
             warn!(LOG_DRAIN, "pod without spec, accepting request");
             kubewarden::accept_request()
@@ -111,37 +107,41 @@ fn validate(payload: &[u8]) -> CallResult {
 }
 
 // verify all images and return a PodSpec with the images replaced with the digest which was used for the verification
-fn verify_all_images_in_pod(
-    spec: &PodSpec,
-    policy_verification_errors: &mut Vec<String>,
-    signatures: &[Signature],
-) -> PodSpec {
+fn verify_all_images_in_pod(spec: &PodSpec, signatures: &[Signature]) -> Result<PodSpec, String> {
+    let mut policy_verification_errors: Vec<String> = vec![];
     let mut spec_images_with_digest = spec.clone();
     let mut init_containers_with_digest: Option<Vec<Container>> = None;
     let mut ephemeral_containers_with_digest: Option<Vec<EphemeralContainer>> = None;
 
-    let containers_with_digest =
-        verify_container_images(&spec.containers, policy_verification_errors, signatures);
+    let containers_with_digest = verify_container_images(
+        &spec.containers,
+        &mut policy_verification_errors,
+        signatures,
+    );
     if let Some(init_containers) = &spec.init_containers {
         init_containers_with_digest = Some(verify_container_images(
             init_containers,
-            policy_verification_errors,
+            &mut policy_verification_errors,
             signatures,
         ));
     }
     if let Some(ephemeral_containers) = &spec.ephemeral_containers {
         ephemeral_containers_with_digest = Some(verify_container_images(
             ephemeral_containers,
-            policy_verification_errors,
+            &mut policy_verification_errors,
             signatures,
         ));
+    }
+
+    if !policy_verification_errors.is_empty() {
+        return Err(policy_verification_errors.join(", "));
     }
 
     spec_images_with_digest.containers = containers_with_digest;
     spec_images_with_digest.init_containers = init_containers_with_digest;
     spec_images_with_digest.ephemeral_containers = ephemeral_containers_with_digest;
 
-    spec_images_with_digest
+    Ok(spec_images_with_digest)
 }
 
 // verify images and return containers with the images replaced with the digest which was used for the verification
