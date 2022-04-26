@@ -21,7 +21,7 @@ mod settings;
 use settings::Settings;
 
 use crate::settings::Signature;
-use slog::{info, o, warn, Logger};
+use slog::{o, warn, Logger};
 use wildmatch::WildMatch;
 
 lazy_static! {
@@ -67,15 +67,16 @@ impl ImageHolder for EphemeralContainer {
 
 fn validate(payload: &[u8]) -> CallResult {
     let validation_request: ValidationRequest<Settings> = ValidationRequest::new(payload)?;
-    info!(LOG_DRAIN, "starting validation");
 
     match serde_json::from_value::<apicore::Pod>(validation_request.request.object.clone()) {
         Ok(mut pod) => {
             if let Some(spec) = pod.spec {
                 match verify_all_images_in_pod(&spec, &validation_request.settings.signatures) {
                     Ok(spec_with_digest) => {
-                        if validation_request.settings.modify_images_with_digest {
-                            pod.spec = Some(spec_with_digest);
+                        if validation_request.settings.modify_images_with_digest
+                            && spec_with_digest.is_some()
+                        {
+                            pod.spec = spec_with_digest;
                             let mutated_object = serde_json::to_value(&pod)?;
                             return kubewarden::mutate_request(mutated_object);
                         } else {
@@ -94,7 +95,6 @@ fn validate(payload: &[u8]) -> CallResult {
                     }
                 }
             }
-            warn!(LOG_DRAIN, "pod without spec, accepting request");
             kubewarden::accept_request()
         }
         Err(_) => {
@@ -107,41 +107,50 @@ fn validate(payload: &[u8]) -> CallResult {
 }
 
 // verify all images and return a PodSpec with the images replaced with the digest which was used for the verification
-fn verify_all_images_in_pod(spec: &PodSpec, signatures: &[Signature]) -> Result<PodSpec, String> {
+fn verify_all_images_in_pod(
+    spec: &PodSpec,
+    signatures: &[Signature],
+) -> Result<Option<PodSpec>, String> {
     let mut policy_verification_errors: Vec<String> = vec![];
     let mut spec_images_with_digest = spec.clone();
-    let mut init_containers_with_digest: Option<Vec<Container>> = None;
-    let mut ephemeral_containers_with_digest: Option<Vec<EphemeralContainer>> = None;
+    let mut is_modified_with_digest = false;
 
-    let containers_with_digest = verify_container_images(
+    if let Some(containers_with_digest) = verify_container_images(
         &spec.containers,
         &mut policy_verification_errors,
         signatures,
-    );
+    ) {
+        spec_images_with_digest.containers = containers_with_digest;
+        is_modified_with_digest = true;
+    }
     if let Some(init_containers) = &spec.init_containers {
-        init_containers_with_digest = Some(verify_container_images(
-            init_containers,
-            &mut policy_verification_errors,
-            signatures,
-        ));
+        if let Some(init_containers_with_digest) =
+            verify_container_images(init_containers, &mut policy_verification_errors, signatures)
+        {
+            spec_images_with_digest.init_containers = Some(init_containers_with_digest);
+            is_modified_with_digest = true;
+        }
     }
     if let Some(ephemeral_containers) = &spec.ephemeral_containers {
-        ephemeral_containers_with_digest = Some(verify_container_images(
+        if let Some(ephemeral_containers_with_digest) = verify_container_images(
             ephemeral_containers,
             &mut policy_verification_errors,
             signatures,
-        ));
+        ) {
+            spec_images_with_digest.ephemeral_containers = Some(ephemeral_containers_with_digest);
+            is_modified_with_digest = true;
+        }
     }
 
     if !policy_verification_errors.is_empty() {
         return Err(policy_verification_errors.join(", "));
     }
 
-    spec_images_with_digest.containers = containers_with_digest;
-    spec_images_with_digest.init_containers = init_containers_with_digest;
-    spec_images_with_digest.ephemeral_containers = ephemeral_containers_with_digest;
-
-    Ok(spec_images_with_digest)
+    if is_modified_with_digest {
+        Ok(Some(spec_images_with_digest))
+    } else {
+        Ok(None)
+    }
 }
 
 // verify images and return containers with the images replaced with the digest which was used for the verification
@@ -149,10 +158,11 @@ fn verify_container_images<T>(
     containers: &[T],
     policy_verification_errors: &mut Vec<String>,
     signatures: &[Signature],
-) -> Vec<T>
+) -> Option<Vec<T>>
 where
     T: ImageHolder,
 {
+    let mut is_modified_with_digest = false;
     let mut container_with_images_digests = containers.to_owned();
     for (i, container) in containers.iter().enumerate() {
         let container_image = container.get_image().unwrap();
@@ -168,9 +178,14 @@ where
                             s.annotations.clone(),
                         ) {
                             Ok(response) => {
-                                let image_with_digest =
-                                    [container_image.as_str(), response.digest.as_str()].join("@");
-                                container_with_images_digests[i].set_image(Some(image_with_digest));
+                                if !container_image.contains(response.digest.as_str()) {
+                                    let image_with_digest =
+                                        [container_image.as_str(), response.digest.as_str()]
+                                            .join("@");
+                                    container_with_images_digests[i]
+                                        .set_image(Some(image_with_digest));
+                                    is_modified_with_digest = true;
+                                }
                             }
                             Err(e) => {
                                 policy_verification_errors.push(format!(
@@ -190,9 +205,14 @@ where
                             s.annotations.clone(),
                         ) {
                             Ok(response) => {
-                                let image_with_digest =
-                                    [container_image.as_str(), response.digest.as_str()].join("@");
-                                container_with_images_digests[i].set_image(Some(image_with_digest));
+                                if !container_image.contains(response.digest.as_str()) {
+                                    let image_with_digest =
+                                        [container_image.as_str(), response.digest.as_str()]
+                                            .join("@");
+                                    container_with_images_digests[i]
+                                        .set_image(Some(image_with_digest));
+                                    is_modified_with_digest = true;
+                                }
                             }
                             Err(e) => {
                                 policy_verification_errors.push(format!(
@@ -207,7 +227,11 @@ where
         }
     }
 
-    container_with_images_digests.to_vec()
+    if is_modified_with_digest {
+        Some(container_with_images_digests.to_vec())
+    } else {
+        None
+    }
 }
 
 #[cfg(test)]
@@ -491,7 +515,8 @@ mod tests {
         };
 
         let response = tc.eval(validate).unwrap();
-        assert_eq!(response.accepted, true)
+        assert_eq!(response.accepted, true);
+        assert!(response.mutated_object.is_none());
     }
 
     #[test]
@@ -596,22 +621,7 @@ mod tests {
 
         let response = tc.eval(validate).unwrap();
         assert_eq!(response.accepted, true);
-        let expected_mutation: serde_json::Value = json!(
-        {
-          "apiVersion": "v1",
-          "kind": "Pod",
-          "metadata": {
-            "name": "nginx"
-          },
-          "spec": {
-            "containers": [
-              {
-                "image": "nginx:v1.26@sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e",
-                "name": "nginx"
-              }
-            ]
-          }
-        });
+
         let expected: serde_json::Value = json!(
                     {
           "apiVersion": "v1",
@@ -636,5 +646,41 @@ mod tests {
         }
                 );
         assert_eq!(response.mutated_object.unwrap(), expected);
+    }
+
+    #[test]
+    #[serial]
+    fn keyless_validation_pass_and_dont_mutate_if_digest_is_present() {
+        let ctx = mock_sdk::verify_keyless_exact_match_context();
+        ctx.expect().times(1).returning(|_, _, _| {
+            Ok(VerificationResponse {
+                is_trusted: true,
+                digest: "sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e"
+                    .to_string(),
+            })
+        });
+
+        let settings: Settings = Settings {
+            signatures: vec![Signature::Keyless(Keyless {
+                image: "nginx:*".to_string(),
+                keyless: vec![KeylessInfo {
+                    issuer: "issuer".to_string(),
+                    subject: "subject".to_string(),
+                }],
+                annotations: None,
+            })],
+            modify_images_with_digest: true,
+        };
+
+        let tc = Testcase {
+            name: String::from("It should successfully validate the nginx container"),
+            fixture_file: String::from("test_data/pod_creation_with_digest.json"),
+            settings: settings,
+            expected_validation_result: true,
+        };
+
+        let response = tc.eval(validate).unwrap();
+        assert_eq!(response.accepted, true);
+        assert!(response.mutated_object.is_none())
     }
 }

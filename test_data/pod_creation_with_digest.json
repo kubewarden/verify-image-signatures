@@ -1,0 +1,32 @@
+{
+  "uid": "1299d386-525b-4032-98ae-1949f69f9cfc",
+  "kind": {
+    "kind": "Pod",
+    "version": "v1"
+  },
+  "object": {
+    "metadata": {
+      "name": "nginx"
+    },
+    "spec": {
+      "containers": [
+        {
+          "image": "nginx:v1.26@sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e",
+          "name": "nginx"
+        }
+      ]
+    }
+  },
+  "operation": "CREATE",
+  "requestKind": {
+    "version": "v1",
+    "kind": "Pod"
+  },
+  "userInfo": {
+    "username": "alice",
+    "uid": "alice-uid",
+    "groups": [
+      "system:authenticated"
+    ]
+  }
+}
