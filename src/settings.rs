@@ -9,8 +9,6 @@ fn default_as_true() -> bool {
     true
 }
 
-// Describe the settings your policy expects when
-// loaded by the policy server.
 #[derive(Serialize, Deserialize, Default, Debug)]
 #[serde(default)]
 #[serde(rename_all = "camelCase")]

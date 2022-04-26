@@ -85,7 +85,7 @@ fn validate(payload: &[u8]) -> CallResult {
                     Err(error) => {
                         return kubewarden::reject_request(
                             Some(format!(
-                                "pod {} is not accepted: {}",
+                                "Pod {} is not accepted: {}",
                                 &pod.metadata.name.unwrap_or_default(),
                                 error
                             )),
@@ -218,6 +218,7 @@ mod tests {
     use kubewarden::host_capabilities::verification::{KeylessInfo, VerificationResponse};
     use kubewarden::test::Testcase;
     use mockall::automock;
+    use serde_json::json;
     use serial_test::serial;
 
     #[automock()]
@@ -286,7 +287,22 @@ mod tests {
 
         let response = tc.eval(validate).unwrap();
         assert_eq!(response.accepted, true);
-        let expected_mutation: serde_json::Value = serde_json::from_str("{\"apiVersion\":\"v1\",\"kind\":\"Pod\",\"metadata\":{\"name\":\"nginx\"},\"spec\":{\"containers\":[{\"image\":\"nginx:v1.26@sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e\",\"name\":\"nginx\"}]}}").unwrap();
+        let expected_mutation: serde_json::Value = json!(
+        {
+          "apiVersion": "v1",
+          "kind": "Pod",
+          "metadata": {
+            "name": "nginx"
+          },
+          "spec": {
+            "containers": [
+              {
+                "image": "nginx:v1.26@sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e",
+                "name": "nginx"
+              }
+            ]
+          }
+        });
         assert_eq!(response.mutated_object.unwrap(), expected_mutation);
     }
 
@@ -389,7 +405,22 @@ mod tests {
 
         let response = tc.eval(validate).unwrap();
         assert_eq!(response.accepted, true);
-        let expected_mutation: serde_json::Value = serde_json::from_str("{\"apiVersion\":\"v1\",\"kind\":\"Pod\",\"metadata\":{\"name\":\"nginx\"},\"spec\":{\"containers\":[{\"image\":\"nginx:v1.26@sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e\",\"name\":\"nginx\"}]}}").unwrap();
+        let expected_mutation: serde_json::Value = json!(
+        {
+          "apiVersion": "v1",
+          "kind": "Pod",
+          "metadata": {
+            "name": "nginx"
+          },
+          "spec": {
+            "containers": [
+              {
+                "image": "nginx:v1.26@sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e",
+                "name": "nginx"
+              }
+            ]
+          }
+        });
         assert_eq!(response.mutated_object.unwrap(), expected_mutation);
     }
 
@@ -565,7 +596,45 @@ mod tests {
 
         let response = tc.eval(validate).unwrap();
         assert_eq!(response.accepted, true);
-        let expected: serde_json::Value = serde_json::from_str("{\"apiVersion\": \"v1\", \"kind\": \"Pod\", \"metadata\": {\"name\": \"nginx\"}, \"spec\": {\"containers\": [{\"image\": \"nginx@sha256:a3d850c2022ebf02156114178ef35298d63f83c740e7b5dd7777ff05898880f8\", \"name\": \"nginx\"}], \"initContainers\": [{\"image\":\"init@sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e\", \"name\": \"init\"}]}}").unwrap();
+        let expected_mutation: serde_json::Value = json!(
+        {
+          "apiVersion": "v1",
+          "kind": "Pod",
+          "metadata": {
+            "name": "nginx"
+          },
+          "spec": {
+            "containers": [
+              {
+                "image": "nginx:v1.26@sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e",
+                "name": "nginx"
+              }
+            ]
+          }
+        });
+        let expected: serde_json::Value = json!(
+                    {
+          "apiVersion": "v1",
+          "kind": "Pod",
+          "metadata": {
+            "name": "nginx"
+          },
+          "spec": {
+            "containers": [
+              {
+                "image": "nginx@sha256:a3d850c2022ebf02156114178ef35298d63f83c740e7b5dd7777ff05898880f8",
+                "name": "nginx"
+              }
+            ],
+            "initContainers": [
+              {
+                "image": "init@sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e",
+                "name": "init"
+              }
+            ]
+          }
+        }
+                );
         assert_eq!(response.mutated_object.unwrap(), expected);
     }
 }
