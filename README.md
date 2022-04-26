@@ -2,12 +2,12 @@
 
 ## Description
 
-This policy validates Sigstore signatures for containers, init container and ephemeral container that matches the name provided 
-in the `image` settings field. It will reject the pod if any validation fails. 
-If all signature validation pass or there is no container that matches the image name, the pod will be accepted.
+This policy validates Sigstore signatures for containers, init container and ephemeral container that match the name provided
+in the `image` settings field. It will reject the Pod if any validation fails.
+If all signature validation pass or there is no container that matches the image name, the Pod will be accepted.
 
 This policy also mutates matching images to add the image digest, therefore the version of the deployed image can't change. 
-This mutation can be disabled by setting `modifyImagesWithDigest` to `false`
+This mutation can be disabled by setting `modifyImagesWithDigest` to `false`.
 
 TODO add link to sigstore doc
 
