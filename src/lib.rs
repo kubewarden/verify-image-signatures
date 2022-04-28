@@ -294,7 +294,7 @@ mod tests {
         let settings: Settings = Settings {
             signatures: vec![Signature::PubKeys {
                 0: PubKeys {
-                    image: "nginx:*".to_string(),
+                    image: "ghcr.io/kubewarden/test-verify-image-signatures:*".to_string(),
                     pub_keys: vec!["key".to_string()],
                     annotations: None,
                 },
@@ -303,8 +303,8 @@ mod tests {
         };
 
         let tc = Testcase {
-            name: String::from("It should successfully validate the nginx container"),
-            fixture_file: String::from("test_data/pod_creation.json"),
+            name: String::from("It should successfully validate the ghcr.io/kubewarden/test-verify-image-signatures container"),
+            fixture_file: String::from("test_data/pod_creation_signed.json"),
             settings: settings,
             expected_validation_result: true,
         };
@@ -321,8 +321,8 @@ mod tests {
           "spec": {
             "containers": [
               {
-                "image": "nginx:v1.26@sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e",
-                "name": "nginx"
+                "image": "ghcr.io/kubewarden/test-verify-image-signatures:signed@sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e",
+                "name": "test-verify-image-signatures"
               }
             ]
           }
@@ -345,7 +345,7 @@ mod tests {
         let settings: Settings = Settings {
             signatures: vec![Signature::PubKeys {
                 0: PubKeys {
-                    image: "nginx:*".to_string(),
+                    image: "ghcr.io/kubewarden/test-verify-image-signatures:*".to_string(),
                     pub_keys: vec!["key".to_string()],
                     annotations: None,
                 },
@@ -354,8 +354,8 @@ mod tests {
         };
 
         let tc = Testcase {
-            name: String::from("It should successfully validate the nginx container"),
-            fixture_file: String::from("test_data/pod_creation.json"),
+            name: String::from("It should successfully validate the ghcr.io/kubewarden/test-verify-image-signatures container"),
+            fixture_file: String::from("test_data/pod_creation_signed.json"),
             settings: settings,
             expected_validation_result: true,
         };
@@ -386,7 +386,7 @@ mod tests {
 
         let tc = Testcase {
             name: String::from("It should fail when validating the nginx container"),
-            fixture_file: String::from("test_data/pod_creation.json"),
+            fixture_file: String::from("test_data/pod_creation_signed.json"),
             settings,
             expected_validation_result: false,
         };
@@ -410,7 +410,7 @@ mod tests {
 
         let settings: Settings = Settings {
             signatures: vec![Signature::Keyless(Keyless {
-                image: "nginx:*".to_string(),
+                image: "ghcr.io/kubewarden/test-verify-image-signatures:*".to_string(),
                 keyless: vec![KeylessInfo {
                     issuer: "issuer".to_string(),
                     subject: "subject".to_string(),
@@ -422,7 +422,7 @@ mod tests {
 
         let tc = Testcase {
             name: String::from("It should successfully validate the nginx container"),
-            fixture_file: String::from("test_data/pod_creation.json"),
+            fixture_file: String::from("test_data/pod_creation_signed.json"),
             settings: settings,
             expected_validation_result: true,
         };
@@ -439,8 +439,8 @@ mod tests {
           "spec": {
             "containers": [
               {
-                "image": "nginx:v1.26@sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e",
-                "name": "nginx"
+                "image": "ghcr.io/kubewarden/test-verify-image-signatures:signed@sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e",
+                "name": "test-verify-image-signatures"
               }
             ]
           }
@@ -458,7 +458,7 @@ mod tests {
 
         let settings: Settings = Settings {
             signatures: vec![Signature::Keyless(Keyless {
-                image: "nginx:*".to_string(),
+                image: "ghcr.io/kubewarden/test-verify-image-signatures:*".to_string(),
                 keyless: vec![],
                 annotations: None,
             })],
@@ -466,8 +466,8 @@ mod tests {
         };
 
         let tc = Testcase {
-            name: String::from("It should fail when validating the nginx container"),
-            fixture_file: String::from("test_data/pod_creation.json"),
+            name: String::from("It should fail when validating the ghcr.io/kubewarden/test-verify-image-signatures container"),
+            fixture_file: String::from("test_data/pod_creation_signed.json"),
             settings,
             expected_validation_result: false,
         };
@@ -509,7 +509,7 @@ mod tests {
 
         let tc = Testcase {
             name: String::from("It should return true since there is no matching containers"),
-            fixture_file: String::from("test_data/pod_creation.json"),
+            fixture_file: String::from("test_data/pod_creation_signed.json"),
             settings,
             expected_validation_result: true,
         };
