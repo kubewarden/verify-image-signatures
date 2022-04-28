@@ -89,12 +89,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fnv"
-version = "1.0.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
-
-[[package]]
 name = "form_urlencoded"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -115,17 +109,6 @@ name = "hashbrown"
 version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ab5ef0d4909ef3724cc8cce6ccc8572c5c817592e9285f5464f8e86f8bd3726e"
-
-[[package]]
-name = "http"
-version = "0.2.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31f4c6746584866f0feabcc69893c5b51beef3831656a968ed7ae254cdc4fd03"
-dependencies = [
- "bytes",
- "fnv",
- "itoa",
-]
 
 [[package]]
 name = "idna"
@@ -181,12 +164,9 @@ dependencies = [
  "base64",
  "bytes",
  "chrono",
- "http",
- "percent-encoding",
  "serde",
  "serde-value",
  "serde_json",
- "url",
 ]
 
 [[package]]
@@ -205,8 +185,8 @@ dependencies = [
 
 [[package]]
 name = "kubewarden-policy-sdk"
-version = "0.3.2"
-source = "git+https://github.com/raulcabello/policy-sdk-rust?branch=sigstore_container_verification#107827f8d8259848534f25eadba1130143c7fbde"
+version = "0.4.0"
+source = "git+https://github.com/kubewarden/policy-sdk-rust?tag=v0.4.0#5a000314ebcc6398f759968bf2822103f08c6dc5"
 dependencies = [
  "anyhow",
  "k8s-openapi 0.14.0",
