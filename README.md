@@ -1,20 +1,41 @@
-Please, note well: this file and the scaffold were generated from [a
-template](https://github.com/kubewarden/policy-rust-template). Make
-this project yours!
-
 # Kubewarden policy verify-image-signatures
 
 ## Description
 
-This policy will reject pods that have a name `invalid-pod-name`. If
-the pod to be validated has a different name, or if a different type
-of resource is evaluated, it will be accepted.
+This policy validates Sigstore signatures for containers, init container and ephemeral container that match the name provided
+in the `image` settings field. It will reject the Pod if any validation fails.
+If all signature validation pass or there is no container that matches the image name, the Pod will be accepted.
+
+This policy also mutates matching images to add the image digest, therefore the version of the deployed image can't change. 
+This mutation can be disabled by setting `modifyImagesWithDigest` to `false`.
+
+TODO add link to sigstore doc
 
 ## Settings
 
-This policy has no configurable settings. This would be a good place
-to document if yours does, and what behaviors can be configured by
-tweaking them.
+The policy takes a list of signatures. A signature can be of two types: public key or keyless. Each signature
+has an `image` field which will be used to select the matching containers in the pod that will be evaluated.
+`image` supports wildcard. For example, `ghcr.io/kubewarden/*` will match all images from the kubewarden ghcr repo.
+
+Example:
+
+```yaml
+modifyImagesWithDigest: true #optional. default is true
+signatures:
+  - image: "*"
+    pubKeys: 
+      - ....
+    annotations: #optional
+      env: prod
+  - image: "ghcr.io/kubewarden/*" 
+    keyless:
+      - issuer: "https://token.actions.githubusercontent.com"
+        subject: "kubewarden"
+    annotations: #optional
+      env: prod
+```
+
+This policy will validate all images with the public keys provided, and images whose name matches `ghcr.io/kubewarden/*` with the keyless provided.
 
 ## License
 

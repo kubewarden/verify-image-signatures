@@ -11,7 +11,7 @@
     "spec": {
       "containers": [
         {
-          "image": "nginx:v1.26",
+          "image": "nginx:v1.26@sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e",
           "name": "nginx"
         }
       ]

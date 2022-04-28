@@ -6,13 +6,19 @@
   },
   "object": {
     "metadata": {
-      "name": "invalid-pod-name"
+      "name": "nginx"
     },
     "spec": {
       "containers": [
         {
           "image": "nginx",
           "name": "nginx"
+        }
+      ],
+      "initContainers": [
+        {
+          "image": "init",
+          "name": "init"
         }
       ]
     }
