@@ -9,11 +9,15 @@ executionMode: kubewarden-wapc
 annotations:
   io.kubewarden.policy.title: verify-image-signatures
   io.kubewarden.policy.description: Short description
-  io.kubewarden.policy.author: Flavio Castelli <fcastelli@suse.com>
-  io.kubewarden.policy.url: https://github.com/yourorg/verify-image-signatures
-  io.kubewarden.policy.source: https://github.com/yourorg/verify-image-signatures
+  io.kubewarden.policy.author: "Raul Cabello Martin <raul.cabello@suse.com>","Victor Cuadrado Juan <vcuadradojuan@suse.de>"
+  io.kubewarden.policy.url: https://github.com/kubewarden/verify-image-signatures
+  io.kubewarden.policy.source: https://github.com/kubewarden/verify-image-signatures
   io.kubewarden.policy.license: Apache-2.0
   io.kubewarden.policy.usage: |
-    Long explaination.
+    This policy validates Sigstore signatures for containers, init container and ephemeral container that match the name provided
+  in the `image` settings field. It will reject the Pod if any validation fails.
+  If all signature validation pass or there is no container that matches the image name, the Pod will be accepted.
+  
+  This policy also mutates matching images to add the image digest, therefore the version of the deployed image can't change.
+  This mutation can be disabled by setting `modifyImagesWithDigest` to `false`.
 
-    **Note well:** this can be Markdown text
