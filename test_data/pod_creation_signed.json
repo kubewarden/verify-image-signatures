@@ -11,8 +11,8 @@
     "spec": {
       "containers": [
         {
-          "image": "nginx:v1.26",
-          "name": "nginx"
+          "image": "ghcr.io/kubewarden/test-verify-image-signatures:signed",
+          "name": "test-verify-image-signatures"
         }
       ]
     }
