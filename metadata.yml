@@ -8,7 +8,7 @@ contextAware: false
 executionMode: kubewarden-wapc
 annotations:
   io.kubewarden.policy.title: verify-image-signatures
-  io.kubewarden.policy.description: Short description
+  io.kubewarden.policy.description: A Kubewarden Policy that verifies all the signatures of the container images referenced by a Pod
   io.kubewarden.policy.author: "Raul Cabello Martin <raul.cabello@suse.com>, Victor Cuadrado Juan <vcuadradojuan@suse.de>"
   io.kubewarden.policy.url: https://github.com/kubewarden/verify-image-signatures
   io.kubewarden.policy.source: https://github.com/kubewarden/verify-image-signatures
