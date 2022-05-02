@@ -1,6 +1,6 @@
 [package]
 name = "verify-image-signatures"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["raulcabello <raul.cabello@suse.com>","viccuad <vcuadradojuan@suse.de>"]
 edition = "2018"
 
@@ -10,8 +10,8 @@ edition = "2018"
 crate-type = ["cdylib"]
 
 [dependencies]
-k8s-openapi = { version = "0.11.0", default_features = false, features = ["v1_20"] }
-kubewarden-policy-sdk = { git = "https://github.com/kubewarden/policy-sdk-rust", tag = "v0.4.0" }
+k8s-openapi = { version = "0.14.0", default_features = false, features = ["v1_23"] }
+kubewarden-policy-sdk = "0.4.1"
 lazy_static = "1.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
