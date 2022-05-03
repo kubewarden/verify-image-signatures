@@ -40,7 +40,7 @@ This policy will validate all images with the public keys provided, and images w
 ## License
 
 ```
-Copyright (C) 2021 Flavio Castelli <fcastelli@suse.com>
+Copyright (C) 2022 Raul Cabello Martin <raul.cabello@suse.com>
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
