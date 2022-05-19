@@ -14,5 +14,5 @@ keywords:
   - trusted
 resources:
   - Pod
-mutation: false
+mutation: true
 contextAware: false
