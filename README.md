@@ -9,7 +9,7 @@ If all signature validation pass or there is no container that matches the image
 This policy also mutates matching images to add the image digest, therefore the version of the deployed image can't change. 
 This mutation can be disabled by setting `modifyImagesWithDigest` to `false`.
 
-See the [Secure Supply Chain docs in Kubewarden](https://docs.kubewarden.io/distributing-policies/secure-supply-chain.html) for more info.
+See the [Secure Supply Chain docs in Kubewarden](https://docs.kubewarden.io/distributing-policies/secure-supply-chain) for more info.
 
 ## Settings
 
