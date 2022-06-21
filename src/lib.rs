@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 
-extern crate wapc_guest as guest;
 use guest::prelude::*;
+use kubewarden_policy_sdk::wapc_guest as guest;
 
 use k8s_openapi::api::core::v1 as apicore;
 use k8s_openapi::api::core::v1::{Container, EphemeralContainer, PodSpec};
@@ -90,6 +90,8 @@ fn validate(payload: &[u8]) -> CallResult {
                                 &pod.metadata.name.unwrap_or_default(),
                                 error
                             )),
+                            None,
+                            None,
                             None,
                         );
                     }
