@@ -37,6 +37,29 @@ signatures:
 
 This policy will validate all images with the public keys provided, and images whose name matches `ghcr.io/kubewarden/*` with the keyless provided.
 
+Another example that validates a github action:
+
+```
+signatures:
+- image: "ghcr.io/kubewarden/*"
+  repo: "app-example"
+  owner: "kubewarden"
+```
+
+This will validate the github repo `app-example` for the `kubewarden` owner
+
+And a url prefix example:
+
+```
+signatures:
+- image: "ghcr.io/kubewarden/*"
+  keyless_prefix:
+    - issuer: "https://token.actions.githubusercontent.com"
+      url_prefix: "https://github.com/kubewarden/app-example/.github/workflows/ci.yml@refs/tags/"
+```
+
+url_prefix will match all subjects that starts with `https://github.com/kubewarden/app-example/.github/workflows/ci.yml@refs/tags/`
+
 ## License
 
 ```

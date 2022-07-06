@@ -8,13 +8,15 @@ use k8s_openapi::api::core::v1::{Container, EphemeralContainer, PodSpec};
 
 extern crate kubewarden_policy_sdk as kubewarden;
 #[cfg(test)]
-use crate::tests::mock_sdk::verify_keyless_exact_match;
-#[cfg(test)]
-use crate::tests::mock_sdk::verify_pub_keys_image;
+use crate::tests::mock_sdk::{
+    verify_keyless_exact_match, verify_keyless_github_actions, verify_keyless_prefix_match,
+    verify_pub_keys_image,
+};
 #[cfg(not(test))]
-use kubewarden::host_capabilities::verification::verify_keyless_exact_match;
-#[cfg(not(test))]
-use kubewarden::host_capabilities::verification::verify_pub_keys_image;
+use kubewarden::host_capabilities::verification::{
+    verify_keyless_exact_match, verify_keyless_github_actions, verify_keyless_prefix_match,
+    verify_pub_keys_image,
+};
 use kubewarden::{logging, protocol_version_guest, request::ValidationRequest, validate_settings};
 
 mod settings;
@@ -180,12 +182,11 @@ where
                             s.annotations.clone(),
                         ) {
                             Ok(response) => {
-                                if !container_image.contains(response.digest.as_str()) {
-                                    let image_with_digest =
-                                        [container_image.as_str(), response.digest.as_str()]
-                                            .join("@");
-                                    container_with_images_digests[i]
-                                        .set_image(Some(image_with_digest));
+                                if add_digest_if_not_present(
+                                    container_image.as_str(),
+                                    response.digest.as_str(),
+                                    &mut container_with_images_digests[i],
+                                ) {
                                     is_modified_with_digest = true;
                                 }
                             }
@@ -207,12 +208,64 @@ where
                             s.annotations.clone(),
                         ) {
                             Ok(response) => {
-                                if !container_image.contains(response.digest.as_str()) {
-                                    let image_with_digest =
-                                        [container_image.as_str(), response.digest.as_str()]
-                                            .join("@");
-                                    container_with_images_digests[i]
-                                        .set_image(Some(image_with_digest));
+                                if add_digest_if_not_present(
+                                    container_image.as_str(),
+                                    response.digest.as_str(),
+                                    &mut container_with_images_digests[i],
+                                ) {
+                                    is_modified_with_digest = true;
+                                }
+                            }
+                            Err(e) => {
+                                policy_verification_errors.push(format!(
+                                    "verification of image {} failed: {}",
+                                    container_image, e
+                                ));
+                            }
+                        }
+                    }
+                }
+                Signature::KeylessPrefix(s) => {
+                    // verify if the name matches the image name provided
+                    if WildMatch::new(s.image.as_str()).matches(container_image.as_str()) {
+                        match verify_keyless_prefix_match(
+                            container_image.as_str(),
+                            s.keyless_prefix.clone(),
+                            s.annotations.clone(),
+                        ) {
+                            Ok(response) => {
+                                if add_digest_if_not_present(
+                                    container_image.as_str(),
+                                    response.digest.as_str(),
+                                    &mut container_with_images_digests[i],
+                                ) {
+                                    is_modified_with_digest = true;
+                                }
+                            }
+                            Err(e) => {
+                                policy_verification_errors.push(format!(
+                                    "verification of image {} failed: {}",
+                                    container_image, e
+                                ));
+                            }
+                        }
+                    }
+                }
+                Signature::GithubActions(s) => {
+                    // verify if the name matches the image name provided
+                    if WildMatch::new(s.image.as_str()).matches(container_image.as_str()) {
+                        match verify_keyless_github_actions(
+                            container_image.as_str(),
+                            s.owner.clone(),
+                            s.repo.clone(),
+                            s.annotations.clone(),
+                        ) {
+                            Ok(response) => {
+                                if add_digest_if_not_present(
+                                    container_image.as_str(),
+                                    response.digest.as_str(),
+                                    &mut container_with_images_digests[i],
+                                ) {
                                     is_modified_with_digest = true;
                                 }
                             }
@@ -236,12 +289,31 @@ where
     }
 }
 
+// returns true if digest was appended
+fn add_digest_if_not_present<T>(
+    container_image: &str,
+    digest: &str,
+    container_with_images_digests: &mut T,
+) -> bool
+where
+    T: ImageHolder,
+{
+    if !container_image.contains(digest) {
+        let image_with_digest = [container_image, digest].join("@");
+        container_with_images_digests.set_image(Some(image_with_digest));
+        return true;
+    }
+    false
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::settings::{Keyless, PubKeys};
+    use crate::settings::{GithubActions, Keyless, KeylessPrefix, PubKeys};
     use anyhow::anyhow;
-    use kubewarden::host_capabilities::verification::{KeylessInfo, VerificationResponse};
+    use kubewarden::host_capabilities::verification::{
+        KeylessInfo, KeylessPrefixInfo, VerificationResponse,
+    };
     use kubewarden::test::Testcase;
     use mockall::automock;
     use serde_json::json;
@@ -250,7 +322,9 @@ mod tests {
     #[automock()]
     pub mod sdk {
         use anyhow::Result;
-        use kubewarden::host_capabilities::verification::{KeylessInfo, VerificationResponse};
+        use kubewarden::host_capabilities::verification::{
+            KeylessInfo, KeylessPrefixInfo, VerificationResponse,
+        };
         use std::collections::HashMap;
 
         // needed for creating mocks
@@ -271,6 +345,33 @@ mod tests {
         pub fn verify_keyless_exact_match(
             _image: &str,
             _keyless: Vec<KeylessInfo>,
+            _annotations: Option<HashMap<String, String>>,
+        ) -> Result<VerificationResponse> {
+            Ok(VerificationResponse {
+                is_trusted: true,
+                digest: "mock_digest".to_string(),
+            })
+        }
+
+        // needed for creating mocks
+        #[allow(dead_code)]
+        pub fn verify_keyless_prefix_match(
+            _image: &str,
+            _keyless_prefix: Vec<KeylessPrefixInfo>,
+            _annotations: Option<HashMap<String, String>>,
+        ) -> Result<VerificationResponse> {
+            Ok(VerificationResponse {
+                is_trusted: true,
+                digest: "mock_digest".to_string(),
+            })
+        }
+
+        // needed for creating mocks
+        #[allow(dead_code)]
+        pub fn verify_keyless_github_actions(
+            _image: &str,
+            _owner: String,
+            _repo: Option<String>,
             _annotations: Option<HashMap<String, String>>,
         ) -> Result<VerificationResponse> {
             Ok(VerificationResponse {
@@ -669,6 +770,76 @@ mod tests {
                     issuer: "issuer".to_string(),
                     subject: "subject".to_string(),
                 }],
+                annotations: None,
+            })],
+            modify_images_with_digest: true,
+        };
+
+        let tc = Testcase {
+            name: String::from("It should successfully validate the nginx container"),
+            fixture_file: String::from("test_data/pod_creation_with_digest.json"),
+            settings: settings,
+            expected_validation_result: true,
+        };
+
+        let response = tc.eval(validate).unwrap();
+        assert_eq!(response.accepted, true);
+        assert!(response.mutated_object.is_none())
+    }
+
+    #[test]
+    #[serial]
+    fn keyless_prefix_validation_pass_and_dont_mutate_if_digest_is_present() {
+        let ctx = mock_sdk::verify_keyless_prefix_match_context();
+        ctx.expect().times(1).returning(|_, _, _| {
+            Ok(VerificationResponse {
+                is_trusted: true,
+                digest: "sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e"
+                    .to_string(),
+            })
+        });
+
+        let settings: Settings = Settings {
+            signatures: vec![Signature::KeylessPrefix(KeylessPrefix {
+                image: "nginx:*".to_string(),
+                keyless_prefix: vec![KeylessPrefixInfo {
+                    issuer: "issuer".to_string(),
+                    url_prefix: "subject".to_string(),
+                }],
+                annotations: None,
+            })],
+            modify_images_with_digest: true,
+        };
+
+        let tc = Testcase {
+            name: String::from("It should successfully validate the nginx container"),
+            fixture_file: String::from("test_data/pod_creation_with_digest.json"),
+            settings: settings,
+            expected_validation_result: true,
+        };
+
+        let response = tc.eval(validate).unwrap();
+        assert_eq!(response.accepted, true);
+        assert!(response.mutated_object.is_none())
+    }
+
+    #[test]
+    #[serial]
+    fn keyless_github_action_validation_pass_and_dont_mutate_if_digest_is_present() {
+        let ctx = mock_sdk::verify_keyless_github_actions_context();
+        ctx.expect().times(1).returning(|_, _, _, _| {
+            Ok(VerificationResponse {
+                is_trusted: true,
+                digest: "sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e"
+                    .to_string(),
+            })
+        });
+
+        let settings: Settings = Settings {
+            signatures: vec![Signature::GithubActions(GithubActions {
+                image: "nginx:*".to_string(),
+                repo: Some("repo".to_string()),
+                owner: "owner".to_string(),
                 annotations: None,
             })],
             modify_images_with_digest: true,
