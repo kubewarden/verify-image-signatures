@@ -59,6 +59,7 @@ signatures:
 ```
 
 url_prefix will match all subjects that starts with `https://github.com/kubewarden/app-example/.github/workflows/ci.yml@refs/tags/`
+`url_prefix` is sanitized to prevent typosquatting.
 
 ## License
 
