@@ -12,6 +12,8 @@ use crate::tests::mock_sdk::{
     verify_keyless_exact_match, verify_keyless_github_actions, verify_keyless_prefix_match,
     verify_pub_keys_image,
 };
+use anyhow::Result;
+use kubewarden::host_capabilities::verification::VerificationResponse;
 #[cfg(not(test))]
 use kubewarden::host_capabilities::verification::{
     verify_keyless_exact_match, verify_keyless_github_actions, verify_keyless_prefix_match,
@@ -164,10 +166,10 @@ fn verify_container_images<T>(
     signatures: &[Signature],
 ) -> Option<Vec<T>>
 where
-    T: ImageHolder,
+    T: ImageHolder + PartialEq,
 {
-    let mut is_modified_with_digest = false;
     let mut container_with_images_digests = containers.to_owned();
+
     for (i, container) in containers.iter().enumerate() {
         let container_image = container.get_image().unwrap();
 
@@ -176,117 +178,96 @@ where
                 Signature::PubKeys(s) => {
                     // verify if the name matches the image name provided
                     if WildMatch::new(s.image.as_str()).matches(container_image.as_str()) {
-                        match verify_pub_keys_image(
+                        handle_verification_response(
+                            verify_pub_keys_image(
+                                container_image.as_str(),
+                                s.pub_keys.clone(),
+                                s.annotations.clone(),
+                            ),
                             container_image.as_str(),
-                            s.pub_keys.clone(),
-                            s.annotations.clone(),
-                        ) {
-                            Ok(response) => {
-                                if add_digest_if_not_present(
-                                    container_image.as_str(),
-                                    response.digest.as_str(),
-                                    &mut container_with_images_digests[i],
-                                ) {
-                                    is_modified_with_digest = true;
-                                }
-                            }
-                            Err(e) => {
-                                policy_verification_errors.push(format!(
-                                    "verification of image {} failed: {}",
-                                    container_image, e
-                                ));
-                            }
-                        }
+                            &mut container_with_images_digests[i],
+                            policy_verification_errors,
+                        );
                     }
                 }
                 Signature::Keyless(s) => {
                     // verify if the name matches the image name provided
                     if WildMatch::new(s.image.as_str()).matches(container_image.as_str()) {
-                        match verify_keyless_exact_match(
+                        handle_verification_response(
+                            verify_keyless_exact_match(
+                                container_image.as_str(),
+                                s.keyless.clone(),
+                                s.annotations.clone(),
+                            ),
                             container_image.as_str(),
-                            s.keyless.clone(),
-                            s.annotations.clone(),
-                        ) {
-                            Ok(response) => {
-                                if add_digest_if_not_present(
-                                    container_image.as_str(),
-                                    response.digest.as_str(),
-                                    &mut container_with_images_digests[i],
-                                ) {
-                                    is_modified_with_digest = true;
-                                }
-                            }
-                            Err(e) => {
-                                policy_verification_errors.push(format!(
-                                    "verification of image {} failed: {}",
-                                    container_image, e
-                                ));
-                            }
-                        }
+                            &mut container_with_images_digests[i],
+                            policy_verification_errors,
+                        );
                     }
                 }
                 Signature::KeylessPrefix(s) => {
                     // verify if the name matches the image name provided
                     if WildMatch::new(s.image.as_str()).matches(container_image.as_str()) {
-                        match verify_keyless_prefix_match(
+                        handle_verification_response(
+                            verify_keyless_prefix_match(
+                                container_image.as_str(),
+                                s.keyless_prefix.clone(),
+                                s.annotations.clone(),
+                            ),
                             container_image.as_str(),
-                            s.keyless_prefix.clone(),
-                            s.annotations.clone(),
-                        ) {
-                            Ok(response) => {
-                                if add_digest_if_not_present(
-                                    container_image.as_str(),
-                                    response.digest.as_str(),
-                                    &mut container_with_images_digests[i],
-                                ) {
-                                    is_modified_with_digest = true;
-                                }
-                            }
-                            Err(e) => {
-                                policy_verification_errors.push(format!(
-                                    "verification of image {} failed: {}",
-                                    container_image, e
-                                ));
-                            }
-                        }
+                            &mut container_with_images_digests[i],
+                            policy_verification_errors,
+                        );
                     }
                 }
                 Signature::GithubActions(s) => {
                     // verify if the name matches the image name provided
                     if WildMatch::new(s.image.as_str()).matches(container_image.as_str()) {
-                        match verify_keyless_github_actions(
+                        handle_verification_response(
+                            verify_keyless_github_actions(
+                                container_image.as_str(),
+                                s.owner.clone(),
+                                s.repo.clone(),
+                                s.annotations.clone(),
+                            ),
                             container_image.as_str(),
-                            s.owner.clone(),
-                            s.repo.clone(),
-                            s.annotations.clone(),
-                        ) {
-                            Ok(response) => {
-                                if add_digest_if_not_present(
-                                    container_image.as_str(),
-                                    response.digest.as_str(),
-                                    &mut container_with_images_digests[i],
-                                ) {
-                                    is_modified_with_digest = true;
-                                }
-                            }
-                            Err(e) => {
-                                policy_verification_errors.push(format!(
-                                    "verification of image {} failed: {}",
-                                    container_image, e
-                                ));
-                            }
-                        }
+                            &mut container_with_images_digests[i],
+                            policy_verification_errors,
+                        );
                     }
                 }
             }
         }
     }
 
-    if is_modified_with_digest {
+    if containers != container_with_images_digests {
         Some(container_with_images_digests.to_vec())
     } else {
         None
     }
+}
+
+fn handle_verification_response<T>(
+    response: Result<VerificationResponse>,
+    container_image: &str,
+    container_with_images_digests: &mut T,
+    policy_verification_errors: &mut Vec<String>,
+) where
+    T: ImageHolder,
+{
+    match response {
+        Ok(response) => add_digest_if_not_present(
+            container_image,
+            response.digest.as_str(),
+            container_with_images_digests,
+        ),
+        Err(e) => {
+            policy_verification_errors.push(format!(
+                "verification of image {} failed: {}",
+                container_image, e
+            ));
+        }
+    };
 }
 
 // returns true if digest was appended
@@ -294,16 +275,13 @@ fn add_digest_if_not_present<T>(
     container_image: &str,
     digest: &str,
     container_with_images_digests: &mut T,
-) -> bool
-where
+) where
     T: ImageHolder,
 {
     if !container_image.contains(digest) {
         let image_with_digest = [container_image, digest].join("@");
         container_with_images_digests.set_image(Some(image_with_digest));
-        return true;
     }
-    false
 }
 
 #[cfg(test)]
