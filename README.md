@@ -37,7 +37,7 @@ signatures:
 
 This policy will validate all images with the public keys provided, and images whose name matches `ghcr.io/kubewarden/*` with the keyless provided.
 
-Another example that validates a github action:
+Another example that validates a GitHub action:
 
 ```
 signatures:
@@ -46,7 +46,7 @@ signatures:
   owner: "kubewarden"
 ```
 
-This will validate the github repo `app-example` for the `kubewarden` owner
+This will validate the GitHub repo `app-example` for the `kubewarden` owner
 
 And a url prefix example:
 
@@ -58,7 +58,7 @@ signatures:
       url_prefix: "https://github.com/kubewarden/app-example/.github/workflows/ci.yml@refs/tags/"
 ```
 
-url_prefix will match all subjects that starts with `https://github.com/kubewarden/app-example/.github/workflows/ci.yml@refs/tags/`
+`url_prefix` will match all subjects that starts with `https://github.com/kubewarden/app-example/.github/workflows/ci.yml@refs/tags/`
 `url_prefix` is sanitized to prevent typosquatting.
 
 ## License
