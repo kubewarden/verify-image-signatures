@@ -20,3 +20,5 @@ annotations:
     
     This policy also mutates matching images to add the image digest, therefore the version of the deployed image can't change.
     This mutation can be disabled by setting `modifyImagesWithDigest` to `false`.
+    
+    There are four types of signatures: GitHub actions, public key, keyless exact match and keyless prefix.
