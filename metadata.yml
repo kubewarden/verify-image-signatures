@@ -14,11 +14,63 @@ annotations:
   io.kubewarden.policy.source: https://github.com/kubewarden/verify-image-signatures
   io.kubewarden.policy.license: Apache-2.0
   io.kubewarden.policy.usage: |
-    This policy validates Sigstore signatures for containers, init container and ephemeral container that match the name provided
-    in the `image` settings field. It will reject the Pod if any validation fails.
-    If all signature validation pass or there is no container that matches the image name, the Pod will be accepted.
+  This policy validates Sigstore signatures for containers, init container and ephemeral container that match the name provided
+  in the `image` settings field. It will reject the Pod if any validation fails.
+  If all signature validation pass or there is no container that matches the image name, the Pod will be accepted.
+  
+  This policy also mutates matching images to add the image digest, therefore the version of the deployed image can't change.
+  This mutation can be disabled by setting `modifyImagesWithDigest` to `false`.
+  
+  See the [Secure Supply Chain docs in Kubewarden](https://docs.kubewarden.io/distributing-policies/secure-supply-chain) for more info.
+
+  ## Settings
+
+  The policy takes a list of signatures. A signature can be of four types: GitHub actions, public key, keyless exact match or keyless prefix. Each signature
+  has an `image` field which will be used to select the matching containers in the pod that will be evaluated.
+  `image` supports wildcard. For example, `ghcr.io/kubewarden/*` will match all images from the kubewarden ghcr repo.
+
+  Signature types:
+
+  1. GitHub actions. It will verify that all images were signed for a GitHub action with the `kubewarden` owner and in the repo `app-example`
+  
+  ``` yaml
+  signatures:
+    - image: "ghcr.io/kubewarden/*"
+      owner: "kubewarden" #optional
+      repo: "app-example"
+  ```
+  
+  2. Keyless subject prefix. It will verify that the issuer is `https://token.actions.githubusercontent.com` and the subject starts with `https://github.com/kubewarden/app-example/.github/workflows/ci.yml@refs/tags/`
+  `url_prefix` is sanitized to prevent typosquatting.
+  
+  ``` yaml
+  signatures:
+    - image: "ghcr.io/kubewarden/*"
+      keyless_prefix:
+        - issuer: "https://token.actions.githubusercontent.com"
+          url_prefix: "https://github.com/kubewarden/app-example/.github/workflows/ci.yml@refs/tags/"
+  ```
+  
+  3. Keyless exact match. It will verify that the issuer is `https://token.actions.githubusercontent.com` and the subject is `kubewarden`. It will not modify the image with the digest.
+  
+  ``` yaml
+  modifyImagesWithDigest: false #optional. default is true
+  signatures:
+    - image: "ghcr.io/kubewarden/*"
+      keyless:
+        - issuer: "https://token.actions.githubusercontent.com"
+          subject: "kubewarden"
+  ```
+
+  4. Public key. It will verify that all images were signed with the two public keys provided and contains the `env: prod` annotation
     
-    This policy also mutates matching images to add the image digest, therefore the version of the deployed image can't change.
-    This mutation can be disabled by setting `modifyImagesWithDigest` to `false`.
-    
-    There are four types of signatures: GitHub actions, public key, keyless exact match and keyless prefix.
+    ``` yaml
+    signatures:
+      - image: "ghcr.io/kubewarden/*"
+        pubKeys:
+          - "-----BEGIN PUBLIC KEY-----xxxxx-----END PUBLIC KEY-----"
+          - "-----BEGIN PUBLIC KEY-----xxxxx-----END PUBLIC KEY-----"
+        annotations: #optional
+          env: prod
+    ```
+
