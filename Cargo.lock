@@ -263,9 +263,7 @@ dependencies = [
 
 [[package]]
 name = "kubewarden-policy-sdk"
-version = "0.6.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0dbeb0918c65e2beed24f7eadf69835b545045d1f1aabcb6a95e3282ea2e33ef"
+version = "0.6.3"
 dependencies = [
  "anyhow",
  "k8s-openapi",
