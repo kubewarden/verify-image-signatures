@@ -19,13 +19,14 @@ has an `image` field which will be used to select the matching containers in the
 
 Signature types:
 
-1. GitHub actions. It will verify that all images were signed for a GitHub action with the `kubewarden` owner and in the repo `app-example`
+1. GitHub actions. It will verify that all images were signed for a GitHub action with the `kubewarden` owner and in the repo `app-example`.
 
 ``` yaml
 signatures:
 - image: "ghcr.io/kubewarden/*"
-  owner: "kubewarden" #optional
-  repo: "app-example"
+  github_actions:
+    owner: "kubewarden" #optional
+    repo: "app-example"
 ```
 
 2. Keyless subject prefix. It will verify that the issuer is `https://token.actions.githubusercontent.com` and the subject starts with `https://github.com/kubewarden/app-example/.github/workflows/ci.yml@refs/tags/`
@@ -51,7 +52,7 @@ signatures:
         subject: "kubewarden"
 ``` 
 
-4. Public key. It will verify that all images were signed with the two public keys provided and contains the `env: prod` annotation
+4. Public key. It will verify that all images were signed with the two public keys provided and contains the `env: prod` annotation.
 
 ``` yaml
 signatures:

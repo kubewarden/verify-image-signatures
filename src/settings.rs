@@ -1,5 +1,7 @@
 use crate::LOG_DRAIN;
-use kubewarden::host_capabilities::verification::{KeylessInfo, KeylessPrefixInfo};
+use kubewarden::host_capabilities::verification::{
+    KeylessGithubActionsInfo, KeylessInfo, KeylessPrefixInfo,
+};
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
@@ -46,10 +48,8 @@ pub(crate) struct Keyless {
 pub(crate) struct GithubActions {
     /// String pointing to the object (e.g.: `registry.testing.lan/busybox:1.0.0`)
     pub(crate) image: String,
-    /// owner of the repository. E.g: octocat
-    pub(crate) owner: String,
-    /// Optional - Repo of the GH Action workflow that signed the artifact. E.g: example-repo
-    pub(crate) repo: Option<String>,
+    // GitHub Actions information that must be found in the signature
+    pub(crate) github_actions: KeylessGithubActionsInfo,
     /// Optional - Annotations that must have been provided by all signers when they signed the OCI artifact
     pub(crate) annotations: Option<HashMap<String, String>>,
 }

@@ -226,8 +226,7 @@ where
                         handle_verification_response(
                             verify_keyless_github_actions(
                                 container_image.as_str(),
-                                s.owner.clone(),
-                                s.repo.clone(),
+                                s.github_actions.clone(),
                                 s.annotations.clone(),
                             ),
                             container_image.as_str(),
@@ -290,7 +289,7 @@ mod tests {
     use crate::settings::{GithubActions, Keyless, KeylessPrefix, PubKeys};
     use anyhow::anyhow;
     use kubewarden::host_capabilities::verification::{
-        KeylessInfo, KeylessPrefixInfo, VerificationResponse,
+        KeylessGithubActionsInfo, KeylessInfo, KeylessPrefixInfo, VerificationResponse,
     };
     use kubewarden::test::Testcase;
     use mockall::automock;
@@ -301,7 +300,7 @@ mod tests {
     pub mod sdk {
         use anyhow::Result;
         use kubewarden::host_capabilities::verification::{
-            KeylessInfo, KeylessPrefixInfo, VerificationResponse,
+            KeylessGithubActionsInfo, KeylessInfo, KeylessPrefixInfo, VerificationResponse,
         };
         use std::collections::HashMap;
 
@@ -348,8 +347,7 @@ mod tests {
         #[allow(dead_code)]
         pub fn verify_keyless_github_actions(
             _image: &str,
-            _owner: String,
-            _repo: Option<String>,
+            _github_actions: KeylessGithubActionsInfo,
             _annotations: Option<HashMap<String, String>>,
         ) -> Result<VerificationResponse> {
             Ok(VerificationResponse {
@@ -805,7 +803,7 @@ mod tests {
     #[serial]
     fn keyless_github_action_validation_pass_and_dont_mutate_if_digest_is_present() {
         let ctx = mock_sdk::verify_keyless_github_actions_context();
-        ctx.expect().times(1).returning(|_, _, _, _| {
+        ctx.expect().times(1).returning(|_, _, _| {
             Ok(VerificationResponse {
                 is_trusted: true,
                 digest: "sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e"
@@ -816,8 +814,10 @@ mod tests {
         let settings: Settings = Settings {
             signatures: vec![Signature::GithubActions(GithubActions {
                 image: "nginx:*".to_string(),
-                repo: Some("repo".to_string()),
-                owner: "owner".to_string(),
+                github_actions: KeylessGithubActionsInfo {
+                    owner: "owner".to_string(),
+                    repo: Some("repo".to_string()),
+                },
                 annotations: None,
             })],
             modify_images_with_digest: true,
