@@ -25,8 +25,8 @@ Signature types:
 signatures:
 - image: "ghcr.io/kubewarden/*"
   github_actions:
-    owner: "kubewarden" #optional
-    repo: "app-example"
+    owner: "kubewarden"
+    repo: "app-example" #optional
 ```
 
 2. Keyless subject prefix. It will verify that the issuer is `https://token.actions.githubusercontent.com` and the subject starts with `https://github.com/kubewarden/app-example/.github/workflows/ci.yml@refs/tags/`
