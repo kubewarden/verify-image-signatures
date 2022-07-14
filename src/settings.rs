@@ -1,7 +1,5 @@
 use crate::LOG_DRAIN;
-use kubewarden::host_capabilities::verification::{
-    KeylessGithubActionsInfo, KeylessInfo, KeylessPrefixInfo,
-};
+use kubewarden::host_capabilities::verification::{KeylessInfo, KeylessPrefixInfo};
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
@@ -42,6 +40,14 @@ pub(crate) struct Keyless {
     pub(crate) image: String,
     pub(crate) keyless: Vec<KeylessInfo>,
     pub(crate) annotations: Option<HashMap<String, String>>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub(crate) struct KeylessGithubActionsInfo {
+    /// owner of the repository. E.g: octocat
+    pub(crate) owner: String,
+    /// Optional - Repo of the GH Action workflow that signed the artifact. E.g: example-repo
+    pub(crate) repo: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
