@@ -21,48 +21,48 @@ Signature types:
 
 1. GitHub actions. It will verify that all images were signed for a GitHub action with the `kubewarden` owner and in the repo `app-example`.
 
-``` yaml
-signatures:
-- image: "ghcr.io/kubewarden/*"
-  github_actions:
-    owner: "kubewarden"
-    repo: "app-example" #optional
-```
+  ``` yaml
+  signatures:
+  - image: "ghcr.io/kubewarden/*"
+    github_actions:
+      owner: "kubewarden"
+      repo: "app-example" #optional
+  ```
 
 2. Keyless subject prefix. It will verify that the issuer is `https://token.actions.githubusercontent.com` and the subject starts with `https://github.com/kubewarden/app-example/.github/workflows/ci.yml@refs/tags/`
    `url_prefix` is sanitized to prevent typosquatting.
 
-``` yaml
-signatures:
-- image: "ghcr.io/kubewarden/*"
-  keyless_prefix:
-    - issuer: "https://token.actions.githubusercontent.com"
-      url_prefix: "https://github.com/kubewarden/app-example/.github/workflows/ci.yml@refs/tags/"
-``` 
+  ``` yaml
+  signatures:
+  - image: "ghcr.io/kubewarden/*"
+    keyless_prefix:
+      - issuer: "https://token.actions.githubusercontent.com"
+        url_prefix: "https://github.com/kubewarden/app-example/.github/workflows/ci.yml@refs/tags/"
+  ``` 
 
 
 3. Keyless exact match. It will verify that the issuer is `https://token.actions.githubusercontent.com` and the subject is `kubewarden`. It will not modify the image with the digest.
 
-``` yaml
-modifyImagesWithDigest: false #optional. default is true
-signatures:
-  - image: "ghcr.io/kubewarden/*" 
-    keyless:
-      - issuer: "https://token.actions.githubusercontent.com"
-        subject: "kubewarden"
-``` 
+  ``` yaml
+  modifyImagesWithDigest: false #optional. default is true
+  signatures:
+    - image: "ghcr.io/kubewarden/*" 
+      keyless:
+        - issuer: "https://token.actions.githubusercontent.com"
+          subject: "kubewarden"
+  ``` 
 
 4. Public key. It will verify that all images were signed with the two public keys provided and contains the `env: prod` annotation.
 
-``` yaml
-signatures:
-  - image: "ghcr.io/kubewarden/*"
-    pubKeys: 
-      - "-----BEGIN PUBLIC KEY-----xxxxx-----END PUBLIC KEY-----"
-      - "-----BEGIN PUBLIC KEY-----xxxxx-----END PUBLIC KEY-----"
-    annotations: #optional
-      env: prod
-``` 
+  ``` yaml
+  signatures:
+    - image: "ghcr.io/kubewarden/*"
+      pubKeys: 
+        - "-----BEGIN PUBLIC KEY-----xxxxx-----END PUBLIC KEY-----"
+        - "-----BEGIN PUBLIC KEY-----xxxxx-----END PUBLIC KEY-----"
+      annotations: #optional
+        env: prod
+  ``` 
 
 ## License
 
