@@ -1,6 +1,6 @@
 [package]
 name = "verify-image-signatures"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["raulcabello <raul.cabello@suse.com>","viccuad <vcuadradojuan@suse.de>"]
 edition = "2018"
 
@@ -17,6 +17,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 slog = "2.7"
 wildmatch = "2.1.1"
+anyhow = "1.0.58"
 
 [dev-dependencies]
 rstest = "0.15.0"

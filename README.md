@@ -13,29 +13,56 @@ See the [Secure Supply Chain docs in Kubewarden](https://docs.kubewarden.io/dist
 
 ## Settings
 
-The policy takes a list of signatures. A signature can be of two types: public key or keyless. Each signature
+The policy takes a list of signatures. A signature can be of four types: GitHub actions, public key, keyless exact match or keyless prefix. Each signature
 has an `image` field which will be used to select the matching containers in the pod that will be evaluated.
 `image` supports wildcard. For example, `ghcr.io/kubewarden/*` will match all images from the kubewarden ghcr repo.
 
-Example:
+Signature types:
 
-```yaml
-modifyImagesWithDigest: true #optional. default is true
-signatures:
-  - image: "*"
-    pubKeys: 
-      - ....
-    annotations: #optional
-      env: prod
-  - image: "ghcr.io/kubewarden/*" 
-    keyless:
+1. GitHub actions. It will verify that all images were signed for a GitHub action with the `kubewarden` owner and in the repo `app-example`.
+
+  ``` yaml
+  signatures:
+  - image: "ghcr.io/kubewarden/*"
+    github_actions:
+      owner: "kubewarden"
+      repo: "app-example" #optional
+  ```
+
+2. Keyless subject prefix. It will verify that the issuer is `https://token.actions.githubusercontent.com` and the subject starts with `https://github.com/kubewarden/app-example/.github/workflows/ci.yml@refs/tags/`
+   `url_prefix` is sanitized to prevent typosquatting.
+
+  ``` yaml
+  signatures:
+  - image: "ghcr.io/kubewarden/*"
+    keyless_prefix:
       - issuer: "https://token.actions.githubusercontent.com"
-        subject: "kubewarden"
-    annotations: #optional
-      env: prod
-```
+        url_prefix: "https://github.com/kubewarden/app-example/.github/workflows/ci.yml@refs/tags/"
+  ``` 
 
-This policy will validate all images with the public keys provided, and images whose name matches `ghcr.io/kubewarden/*` with the keyless provided.
+
+3. Keyless exact match. It will verify that the issuer is `https://token.actions.githubusercontent.com` and the subject is `kubewarden`. It will not modify the image with the digest.
+
+  ``` yaml
+  modifyImagesWithDigest: false #optional. default is true
+  signatures:
+    - image: "ghcr.io/kubewarden/*" 
+      keyless:
+        - issuer: "https://token.actions.githubusercontent.com"
+          subject: "kubewarden"
+  ``` 
+
+4. Public key. It will verify that all images were signed with the two public keys provided and contains the `env: prod` annotation.
+
+  ``` yaml
+  signatures:
+    - image: "ghcr.io/kubewarden/*"
+      pubKeys: 
+        - "-----BEGIN PUBLIC KEY-----xxxxx-----END PUBLIC KEY-----"
+        - "-----BEGIN PUBLIC KEY-----xxxxx-----END PUBLIC KEY-----"
+      annotations: #optional
+        env: prod
+  ``` 
 
 ## License
 
