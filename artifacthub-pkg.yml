@@ -1,0 +1,36 @@
+---
+version: 0.1.5
+name: verify-image-signatures
+displayName: Verify Image Signatures
+createdAt: '2022-07-19T16:28:15+02:00'
+description: A Kubewarden Policy that verifies all the signatures of the container
+  images referenced by a Pod
+license: Apache-2.0
+homeURL: https://github.com/kubewarden/verify-image-signatures
+containersImages:
+- name: policy
+  image: ghcr.io/kubewarden/policies/verify-image-signatures:v0.1.5
+install: |
+  The policy can be obtained using [`kwctl`](https://github.com/kubewarden/kwctl/):
+
+  ```console
+  kwctl pull ghcr.io/kubewarden/policies/verify-image-signatures:v0.1.5
+  ```
+keywords:
+- pod
+- signature
+- sigstore
+- trusted
+links:
+- name: policy
+  url: https://github.com/yourorg/verify-image-signatures/releases/download/v0.1.5/policy.wasm
+- name: source
+  url: https://github.com/kubewarden/verify-image-signatures
+provider:
+  name: kubewarden
+recommendations:
+- url: https://artifacthub.io/packages/helm/kubewarden/kubewarden-controller
+annotations:
+  kubewarden/resources: Pod
+  kubewarden/mutation: true
+  kubewarden/contextAware: false
