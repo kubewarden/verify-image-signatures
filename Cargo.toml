@@ -22,5 +22,5 @@ anyhow = "1.0.58"
 [dev-dependencies]
 rstest = "0.15.0"
 serial_test = "0.8.0"
-mockall = "0.11.1"
+mockall = "0.11.2"
 anyhow = "1"
