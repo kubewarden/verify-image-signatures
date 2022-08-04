@@ -23,7 +23,7 @@ keywords:
 - trusted
 links:
 - name: policy
-  url: https://github.com/yourorg/verify-image-signatures/releases/download/v0.1.5/policy.wasm
+  url: https://github.com/kubewarden/verify-image-signatures/releases/download/v0.1.5/policy.wasm
 - name: source
   url: https://github.com/kubewarden/verify-image-signatures
 provider:

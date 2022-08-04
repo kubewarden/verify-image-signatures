@@ -6,7 +6,7 @@ author:
   homepage: https://github.com/kubewarden/verify-image-signatures
 download:
   registry: ghcr.io/kubewarden/policies/verify-image-signatures:__TAG__
-  url: https://github.com/yourorg/verify-image-signatures/releases/download/__TAG__/policy.wasm
+  url: https://github.com/kubewarden/verify-image-signatures/releases/download/__TAG__/policy.wasm
 keywords:
   - Pod
   - signature
