@@ -2,8 +2,8 @@ rules:
 - apiGroups: [""]
   apiVersions: ["v1"]
   resources: ["pods"]
-  operations: ["CREATE"]
-mutating: false
+  operations: ["CREATE", "UPDATE"]
+mutating: true
 contextAware: false
 executionMode: kubewarden-wapc
 annotations:
@@ -17,14 +17,14 @@ annotations:
     This policy validates Sigstore signatures for containers, init container and ephemeral container that match the name provided
     in the `image` settings field. It will reject the Pod if any validation fails.
     If all signature validation pass or there is no container that matches the image name, the Pod will be accepted.
-    
+
     This policy also mutates matching images to add the image digest, therefore the version of the deployed image can't change.
     This mutation can be disabled by setting `modifyImagesWithDigest` to `false`.
-    
+
     See the [Secure Supply Chain docs in Kubewarden](https://docs.kubewarden.io/distributing-policies/secure-supply-chain) for more info.
-  
+
     ## Settings
-  
+
     The policy takes a list of signatures. A signature can be of four types: GitHub actions, public key, keyless exact match or keyless prefix. Each signature
     has an `image` field which will be used to select the matching containers in the pod that will be evaluated.
     `image` supports wildcard. For example, `ghcr.io/kubewarden/*` will match all images from the kubewarden ghcr repo.
