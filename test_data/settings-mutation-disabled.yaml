@@ -1,3 +1,4 @@
+modifyImagesWithDigest: false
 signatures:
   - image: "ghcr.io/kubewarden/*"
     pubKeys:

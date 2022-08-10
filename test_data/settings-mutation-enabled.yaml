@@ -1,7 +1,7 @@
 # No need to set modifyImagesWithDigest to `true` - this is the default
 # behavior
 signatures:
-  - image: ghcr.io/kubewarden/test-verify-image-signatures
+  - image: "ghcr.io/kubewarden/*"
     pubKeys:
       - |
         -----BEGIN PUBLIC KEY-----
