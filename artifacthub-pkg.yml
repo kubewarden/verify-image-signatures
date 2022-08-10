@@ -1,5 +1,5 @@
 ---
-version: 0.1.5
+version: 0.1.6
 name: verify-image-signatures
 displayName: Verify Image Signatures
 createdAt: '2022-07-19T16:28:15+02:00'
@@ -9,13 +9,7 @@ license: Apache-2.0
 homeURL: https://github.com/kubewarden/verify-image-signatures
 containersImages:
 - name: policy
-  image: ghcr.io/kubewarden/policies/verify-image-signatures:v0.1.5
-install: |
-  The policy can be obtained using [`kwctl`](https://github.com/kubewarden/kwctl/):
-
-  ```console
-  kwctl pull ghcr.io/kubewarden/policies/verify-image-signatures:v0.1.5
-  ```
+  image: ghcr.io/kubewarden/policies/verify-image-signatures:v0.1.6
 keywords:
 - pod
 - signature
@@ -23,7 +17,7 @@ keywords:
 - trusted
 links:
 - name: policy
-  url: https://github.com/kubewarden/verify-image-signatures/releases/download/v0.1.5/policy.wasm
+  url: https://github.com/kubewarden/verify-image-signatures/releases/download/v0.1.6/policy.wasm
 - name: source
   url: https://github.com/kubewarden/verify-image-signatures
 provider:

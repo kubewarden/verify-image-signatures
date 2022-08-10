@@ -1,0 +1,9 @@
+modifyImagesWithDigest: false
+signatures:
+  - image: "ghcr.io/kubewarden/*"
+    pubKeys:
+      - |
+        -----BEGIN PUBLIC KEY-----
+        MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEALYYVLuPXXcKajo5meRcU+c6/iZe
+        Dh+o3ZZs1puVW5FyS1cOusnLn209R0IOFL479vm1iFn+auB41JJZUxfc8g==
+        -----END PUBLIC KEY-----
