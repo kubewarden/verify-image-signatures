@@ -31,7 +31,7 @@ jobs:
       - name: Build and annotate policy
         uses: kubewarden/github-actions/policy-build-rust@v1
         with:
-          input-wasm: target/wasm32-unknown-unknown/release/verify_image_signatures.wasm
+          input-wasm: target/wasm32-wasi/release/verify_image_signatures.wasm
       - name: Run e2e tests
         run: |
           make e2e-tests
