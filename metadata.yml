@@ -21,6 +21,34 @@ annotations:
     This policy also mutates matching images to add the image digest, therefore the version of the deployed image can't change.
     This mutation can be disabled by setting `modifyImagesWithDigest` to `false`.
 
+    It can also reject all workload resources that contain containers: Deployments, ReplicaSets, StatefulSets, DaemonSets, Jobs, CronJobs, ReplicationControllers
+    For this you need to add these resources in the rules field of the policy.
+
+    Example of a policy that will reject any workload resources mentioned before:
+  
+    ``` yaml
+    apiVersion: policies.kubewarden.io/v1
+    kind: ClusterAdmissionPolicy
+    metadata:
+      name: verify-image-signatures
+    spec:
+      module: ghcr.io/kubewarden/policies/verify-image-signatures:v0.1.7
+      rules:
+        - apiGroups: ["", "apps", "batch"]
+          apiVersions: ["v1"]
+          resources: ["pods", "deployments", "statefulsets", "replicationcontrollers", "jobs", "cronjobs"]
+          operations:
+            - CREATE
+            - UPDATE
+      mutating: true
+      settings:
+        signatures:
+          - image: "*"
+            github_actions:
+              owner: "kubewarden"
+              repo: "app-example"
+    ```
+    
     See the [Secure Supply Chain docs in Kubewarden](https://docs.kubewarden.io/distributing-policies/secure-supply-chain) for more info.
 
     ## Settings
