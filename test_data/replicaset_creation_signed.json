@@ -1,0 +1,36 @@
+{
+  "uid": "1299d386-525b-4032-98ae-1949f69f9cfc",
+  "kind": {
+    "kind": "ReplicaSet",
+    "version": "v1"
+  },
+  "object": {
+    "metadata": {
+      "name": "nginx"
+    },
+    "spec": {
+      "template": {
+        "spec": {
+          "containers": [
+            {
+              "image": "ghcr.io/kubewarden/test-verify-image-signatures:signed",
+              "name": "test-verify-image-signatures"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "operation": "CREATE",
+  "requestKind": {
+    "version": "v1",
+    "kind": "ReplicaSet"
+  },
+  "userInfo": {
+    "username": "alice",
+    "uid": "alice-uid",
+    "groups": [
+      "system:authenticated"
+    ]
+  }
+}
