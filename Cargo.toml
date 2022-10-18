@@ -10,8 +10,8 @@ edition = "2018"
 crate-type = ["cdylib"]
 
 [dependencies]
-k8s-openapi = { version = "0.15.0", default_features = false, features = ["v1_24"] }
-kubewarden-policy-sdk = "0.6.3"
+k8s-openapi = { version = "0.16.0", default_features = false, features = ["v1_24"] }
+kubewarden-policy-sdk = "0.8.1"
 lazy_static = "1.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -22,4 +22,4 @@ anyhow = "1.0"
 [dev-dependencies]
 rstest = "0.15.0"
 serial_test = "0.9.0"
-mockall = "0.11.2"
+mockall = "0.11.3"
