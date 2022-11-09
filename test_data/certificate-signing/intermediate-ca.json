@@ -1,0 +1,18 @@
+{
+  "CN": "Kubewarden Intermediate CA",
+  "key": {
+    "algo": "ecdsa"
+  },
+  "names": [
+    {
+      "C":  "DE",
+      "L":  "Nuremberg",
+      "ST": "Bavaria",
+      "O":  "Kubewarden",
+      "OU": "Kubewarden Intermediate CA"
+    }
+  ],
+  "ca": {
+    "expiry": "8544h"
+  }
+}

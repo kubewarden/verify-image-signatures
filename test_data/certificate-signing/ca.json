@@ -1,0 +1,15 @@
+{
+  "CN": "Kubewarden Root CA",
+  "key": {
+    "algo": "ecdsa"
+  },
+  "names": [
+  {
+    "C": "DE",
+    "L": "Nuremberg",
+    "O": "Kubewarden",
+    "ST": "Bavaria",
+    "OU": "Kubewarden Root CA"
+  }
+ ]
+}
