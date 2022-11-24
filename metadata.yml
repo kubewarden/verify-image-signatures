@@ -103,3 +103,31 @@ annotations:
           annotations: #optional
             env: prod
       ```
+
+    5. Certificate. It will verify that the image has been signed using the Certificate provided by the user.
+      The `certificate` must be PEM encoded. Optionally the settings can have
+      the list of PEM encoded certificates that can create the `certificate_chain`
+      used to verify the given `certificate`.
+      The `require_rekor_bundle` should be set to `true` to have a stronger
+      verification process. When set to `true`, the signature must have a Rekor
+      bundle and the signature must have been created during the validity
+      time frame of the `certificate`.
+
+      ```yaml
+      signatures:
+        - image: "registry-testing.svc.lan/kubewarden/pod-privileged:v0.1.9"
+          certificate: |
+            -----BEGIN CERTIFICATE-----
+            XXX
+            -----END CERTIFICATE-----
+          certificate_chain:
+          - |
+            -----BEGIN CERTIFICATE-----
+            XXX
+            -----END CERTIFICATE-----
+          - |
+            -----BEGIN CERTIFICATE-----
+            xxx
+            -----END CERTIFICATE-----
+          require_rekor_bundle: true
+      ```

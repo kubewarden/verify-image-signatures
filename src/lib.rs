@@ -11,15 +11,15 @@ use k8s_openapi::api::core::v1::{Container, EphemeralContainer, PodSpec, Replica
 extern crate kubewarden_policy_sdk as kubewarden;
 #[cfg(test)]
 use crate::tests::mock_sdk::{
-    verify_keyless_exact_match, verify_keyless_github_actions, verify_keyless_prefix_match,
-    verify_pub_keys_image,
+    verify_certificate, verify_keyless_exact_match, verify_keyless_github_actions,
+    verify_keyless_prefix_match, verify_pub_keys_image,
 };
 use anyhow::Result;
 use kubewarden::host_capabilities::verification::VerificationResponse;
 #[cfg(not(test))]
 use kubewarden::host_capabilities::verification::{
-    verify_keyless_exact_match, verify_keyless_github_actions, verify_keyless_prefix_match,
-    verify_pub_keys_image,
+    verify_certificate, verify_keyless_exact_match, verify_keyless_github_actions,
+    verify_keyless_prefix_match, verify_pub_keys_image,
 };
 use kubewarden::{logging, protocol_version_guest, request::ValidationRequest, validate_settings};
 use serde::de::DeserializeOwned;
@@ -380,6 +380,23 @@ where
                         );
                     }
                 }
+                Signature::Certificate(s) => {
+                    // verify if the name matches the image name provided
+                    if WildMatch::new(s.image.as_str()).matches(container_image.as_str()) {
+                        handle_verification_response(
+                            verify_certificate(
+                                container_image.as_str(),
+                                s.certificate.clone(),
+                                s.certificate_chain.clone(),
+                                s.require_rekor_bundle,
+                                s.annotations.clone(),
+                            ),
+                            container_image.as_str(),
+                            &mut container_with_images_digests[i],
+                            policy_verification_errors,
+                        );
+                    }
+                }
             }
         }
     }
@@ -432,7 +449,7 @@ fn add_digest_if_not_present<T>(
 mod tests {
     use super::*;
     use crate::settings::{
-        GithubActions, Keyless, KeylessGithubActionsInfo, KeylessPrefix, PubKeys,
+        Certificate, GithubActions, Keyless, KeylessGithubActionsInfo, KeylessPrefix, PubKeys,
     };
     use anyhow::anyhow;
     use kubewarden::host_capabilities::verification::{
@@ -503,6 +520,21 @@ mod tests {
                 digest: "mock_digest".to_string(),
             })
         }
+
+        // needed for creating mocks
+        #[allow(dead_code)]
+        pub fn verify_certificate(
+            _image: &str,
+            _certificate: String,
+            _certificate_chain: Option<Vec<String>>,
+            _require_rekor_bundle: bool,
+            _annotations: Option<HashMap<String, String>>,
+        ) -> Result<VerificationResponse> {
+            Ok(VerificationResponse {
+                is_trusted: true,
+                digest: "mock_digest".to_string(),
+            })
+        }
     }
 
     // these tests need to run sequentially because mockall creates a global context to create the mocks
@@ -532,7 +564,7 @@ mod tests {
         let tc = Testcase {
             name: String::from("It should successfully validate the ghcr.io/kubewarden/test-verify-image-signatures container"),
             fixture_file: String::from("test_data/pod_creation_signed.json"),
-            settings: settings,
+            settings,
             expected_validation_result: true,
         };
 
@@ -583,7 +615,7 @@ mod tests {
         let tc = Testcase {
             name: String::from("It should successfully validate the ghcr.io/kubewarden/test-verify-image-signatures container"),
             fixture_file: String::from("test_data/pod_creation_signed.json"),
-            settings: settings,
+            settings,
             expected_validation_result: true,
         };
 
@@ -701,6 +733,72 @@ mod tests {
 
         let response = tc.eval(validate).unwrap();
         assert_eq!(response.accepted, false)
+    }
+
+    #[test]
+    #[serial]
+    fn certificate_validation_pass_with_no_mutation() {
+        let ctx = mock_sdk::verify_certificate_context();
+        ctx.expect().times(1).returning(|_, _, _, _, _| {
+            Ok(VerificationResponse {
+                is_trusted: true,
+                digest: "sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e"
+                    .to_string(),
+            })
+        });
+
+        let settings: Settings = Settings {
+            signatures: vec![Signature::Certificate(Certificate {
+                image: "ghcr.io/kubewarden/test-verify-image-signatures:*".to_string(),
+                certificate: "cert".to_string(),
+                certificate_chain: None,
+                require_rekor_bundle: true,
+                annotations: None,
+            })],
+            modify_images_with_digest: false,
+        };
+
+        let tc = Testcase {
+            name: String::from("It should successfully validate the ghcr.io/kubewarden/test-verify-image-signatures container"),
+            fixture_file: String::from("test_data/pod_creation_signed.json"),
+            settings,
+            expected_validation_result: true,
+        };
+
+        let response = tc.eval(validate).unwrap();
+        assert_eq!(response.accepted, true);
+        assert!(response.mutated_object.is_none());
+    }
+
+    #[test]
+    #[serial]
+    fn certificate_validation_dont_pass() {
+        let ctx = mock_sdk::verify_certificate_context();
+        ctx.expect()
+            .times(1)
+            .returning(|_, _, _, _, _| Err(anyhow!("error")));
+
+        let settings: Settings = Settings {
+            signatures: vec![Signature::Certificate(Certificate {
+                image: "ghcr.io/kubewarden/test-verify-image-signatures:*".to_string(),
+                certificate: "cert".to_string(),
+                certificate_chain: None,
+                require_rekor_bundle: true,
+                annotations: None,
+            })],
+            modify_images_with_digest: true,
+        };
+
+        let tc = Testcase {
+            name: String::from("It should fail when validating the nginx container"),
+            fixture_file: String::from("test_data/pod_creation_signed.json"),
+            settings,
+            expected_validation_result: false,
+        };
+
+        let response = tc.eval(validate).unwrap();
+        assert_eq!(response.accepted, false);
+        assert!(response.mutated_object.is_none());
     }
 
     #[test]

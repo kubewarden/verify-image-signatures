@@ -273,9 +273,9 @@ dependencies = [
 
 [[package]]
 name = "kubewarden-policy-sdk"
-version = "0.8.2"
+version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8cfefe4b5fae7a635ad251108ff25efaa53db320e0cb1f3438de87424f91bd9"
+checksum = "3983ae33f19888b3bc085dc11d598a6eca47d1872547b32633c2753acd62cee1"
 dependencies = [
  "anyhow",
  "cfg-if",
@@ -722,9 +722,9 @@ dependencies = [
 
 [[package]]
 name = "serde_yaml"
-version = "0.9.13"
+version = "0.9.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8613d593412a0deb7bbd8de9d908efff5a0cb9ccd8f62c641e7b2ed2f57291d1"
+checksum = "6d232d893b10de3eb7258ff01974d6ee20663d8e833263c99409d4b13a0209da"
 dependencies = [
  "indexmap",
  "itoa",
