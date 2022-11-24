@@ -111,7 +111,7 @@ Signature types:
       certificate_chain:
       - |
         -----BEGIN CERTIFICATE-----
-        XXX
+        <intermediate cert>
         -----END CERTIFICATE-----
       - |
         -----BEGIN CERTIFICATE-----
