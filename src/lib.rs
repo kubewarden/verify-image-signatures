@@ -552,10 +552,10 @@ mod tests {
 
         let settings: Settings = Settings {
             signatures: vec![Signature::PubKeys(PubKeys {
-                    image: "ghcr.io/kubewarden/test-verify-image-signatures:*".to_string(),
-                    pub_keys: vec!["key".to_string()],
-                    annotations: None,
-                })],
+                image: "ghcr.io/kubewarden/test-verify-image-signatures:*".to_string(),
+                pub_keys: vec!["key".to_string()],
+                annotations: None,
+            })],
             modify_images_with_digest: true,
         };
 
@@ -601,10 +601,10 @@ mod tests {
 
         let settings: Settings = Settings {
             signatures: vec![Signature::PubKeys(PubKeys {
-                    image: "ghcr.io/kubewarden/test-verify-image-signatures:*".to_string(),
-                    pub_keys: vec!["key".to_string()],
-                    annotations: None,
-                })],
+                image: "ghcr.io/kubewarden/test-verify-image-signatures:*".to_string(),
+                pub_keys: vec!["key".to_string()],
+                annotations: None,
+            })],
             modify_images_with_digest: false,
         };
 
@@ -630,10 +630,10 @@ mod tests {
 
         let settings: Settings = Settings {
             signatures: vec![Signature::PubKeys(PubKeys {
-                    image: "*".to_string(),
-                    pub_keys: vec!["key".to_string()],
-                    annotations: None,
-                })],
+                image: "*".to_string(),
+                pub_keys: vec!["key".to_string()],
+                annotations: None,
+            })],
             modify_images_with_digest: true,
         };
 
@@ -811,10 +811,10 @@ mod tests {
         let settings: Settings = Settings {
             signatures: vec![
                 Signature::PubKeys(PubKeys {
-                        image: "no_matching".to_string(),
-                        pub_keys: vec![],
-                        annotations: None,
-                    }),
+                    image: "no_matching".to_string(),
+                    pub_keys: vec![],
+                    annotations: None,
+                }),
                 Signature::Keyless(Keyless {
                     image: "no_matching".to_string(),
                     keyless: vec![],
@@ -865,10 +865,10 @@ mod tests {
                     annotations: None,
                 }),
                 Signature::PubKeys(PubKeys {
-                        image: "init".to_string(),
-                        pub_keys: vec![],
-                        annotations: None,
-                    }),
+                    image: "init".to_string(),
+                    pub_keys: vec![],
+                    annotations: None,
+                }),
             ],
             modify_images_with_digest: true,
         };
@@ -917,10 +917,10 @@ mod tests {
                     annotations: None,
                 }),
                 Signature::PubKeys(PubKeys {
-                        image: "init".to_string(),
-                        pub_keys: vec![],
-                        annotations: None,
-                    }),
+                    image: "init".to_string(),
+                    pub_keys: vec![],
+                    annotations: None,
+                }),
             ],
             modify_images_with_digest: true,
         };
