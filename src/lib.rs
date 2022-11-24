@@ -80,7 +80,7 @@ trait ValidatingResource {
 
 impl ValidatingResource for Deployment {
     fn name(&self) -> String {
-        self.metadata.name.clone().unwrap_or_else(|| "".to_string())
+        self.metadata.name.clone().unwrap_or_default()
     }
 
     fn spec(&self) -> Option<PodSpec> {
@@ -90,7 +90,7 @@ impl ValidatingResource for Deployment {
 
 impl ValidatingResource for ReplicaSet {
     fn name(&self) -> String {
-        self.metadata.name.clone().unwrap_or_else(|| "".to_string())
+        self.metadata.name.clone().unwrap_or_default()
     }
 
     fn spec(&self) -> Option<PodSpec> {
@@ -100,7 +100,7 @@ impl ValidatingResource for ReplicaSet {
 
 impl ValidatingResource for StatefulSet {
     fn name(&self) -> String {
-        self.metadata.name.clone().unwrap_or_else(|| "".to_string())
+        self.metadata.name.clone().unwrap_or_default()
     }
 
     fn spec(&self) -> Option<PodSpec> {
@@ -110,7 +110,7 @@ impl ValidatingResource for StatefulSet {
 
 impl ValidatingResource for DaemonSet {
     fn name(&self) -> String {
-        self.metadata.name.clone().unwrap_or_else(|| "".to_string())
+        self.metadata.name.clone().unwrap_or_default()
     }
 
     fn spec(&self) -> Option<PodSpec> {
@@ -120,7 +120,7 @@ impl ValidatingResource for DaemonSet {
 
 impl ValidatingResource for ReplicationController {
     fn name(&self) -> String {
-        self.metadata.name.clone().unwrap_or_else(|| "".to_string())
+        self.metadata.name.clone().unwrap_or_default()
     }
 
     fn spec(&self) -> Option<PodSpec> {
@@ -130,7 +130,7 @@ impl ValidatingResource for ReplicationController {
 
 impl ValidatingResource for Job {
     fn name(&self) -> String {
-        self.metadata.name.clone().unwrap_or_else(|| "".to_string())
+        self.metadata.name.clone().unwrap_or_default()
     }
 
     fn spec(&self) -> Option<PodSpec> {
@@ -140,7 +140,7 @@ impl ValidatingResource for Job {
 
 impl ValidatingResource for CronJob {
     fn name(&self) -> String {
-        self.metadata.name.clone().unwrap_or_else(|| "".to_string())
+        self.metadata.name.clone().unwrap_or_default()
     }
 
     fn spec(&self) -> Option<PodSpec> {
@@ -551,13 +551,11 @@ mod tests {
         });
 
         let settings: Settings = Settings {
-            signatures: vec![Signature::PubKeys {
-                0: PubKeys {
+            signatures: vec![Signature::PubKeys(PubKeys {
                     image: "ghcr.io/kubewarden/test-verify-image-signatures:*".to_string(),
                     pub_keys: vec!["key".to_string()],
                     annotations: None,
-                },
-            }],
+                })],
             modify_images_with_digest: true,
         };
 
@@ -602,13 +600,11 @@ mod tests {
         });
 
         let settings: Settings = Settings {
-            signatures: vec![Signature::PubKeys {
-                0: PubKeys {
+            signatures: vec![Signature::PubKeys(PubKeys {
                     image: "ghcr.io/kubewarden/test-verify-image-signatures:*".to_string(),
                     pub_keys: vec!["key".to_string()],
                     annotations: None,
-                },
-            }],
+                })],
             modify_images_with_digest: false,
         };
 
@@ -633,13 +629,11 @@ mod tests {
             .returning(|_, _, _| Err(anyhow!("error")));
 
         let settings: Settings = Settings {
-            signatures: vec![Signature::PubKeys {
-                0: PubKeys {
+            signatures: vec![Signature::PubKeys(PubKeys {
                     image: "*".to_string(),
                     pub_keys: vec!["key".to_string()],
                     annotations: None,
-                },
-            }],
+                })],
             modify_images_with_digest: true,
         };
 
@@ -682,7 +676,7 @@ mod tests {
         let tc = Testcase {
             name: String::from("It should successfully validate the nginx container"),
             fixture_file: String::from("test_data/pod_creation_signed.json"),
-            settings: settings,
+            settings,
             expected_validation_result: true,
         };
 
@@ -816,13 +810,11 @@ mod tests {
 
         let settings: Settings = Settings {
             signatures: vec![
-                Signature::PubKeys {
-                    0: PubKeys {
+                Signature::PubKeys(PubKeys {
                         image: "no_matching".to_string(),
                         pub_keys: vec![],
                         annotations: None,
-                    },
-                },
+                    }),
                 Signature::Keyless(Keyless {
                     image: "no_matching".to_string(),
                     keyless: vec![],
@@ -872,13 +864,11 @@ mod tests {
                     }],
                     annotations: None,
                 }),
-                Signature::PubKeys {
-                    0: PubKeys {
+                Signature::PubKeys(PubKeys {
                         image: "init".to_string(),
                         pub_keys: vec![],
                         annotations: None,
-                    },
-                },
+                    }),
             ],
             modify_images_with_digest: true,
         };
@@ -926,13 +916,11 @@ mod tests {
                     }],
                     annotations: None,
                 }),
-                Signature::PubKeys {
-                    0: PubKeys {
+                Signature::PubKeys(PubKeys {
                         image: "init".to_string(),
                         pub_keys: vec![],
                         annotations: None,
-                    },
-                },
+                    }),
             ],
             modify_images_with_digest: true,
         };
@@ -1000,7 +988,7 @@ mod tests {
         let tc = Testcase {
             name: String::from("It should successfully validate the nginx container"),
             fixture_file: String::from("test_data/pod_creation_with_digest.json"),
-            settings: settings,
+            settings,
             expected_validation_result: true,
         };
 
@@ -1036,7 +1024,7 @@ mod tests {
         let tc = Testcase {
             name: String::from("It should successfully validate the nginx container"),
             fixture_file: String::from("test_data/pod_creation_with_digest.json"),
-            settings: settings,
+            settings,
             expected_validation_result: true,
         };
 
@@ -1072,7 +1060,7 @@ mod tests {
         let tc = Testcase {
             name: String::from("It should successfully validate the nginx container"),
             fixture_file: String::from("test_data/pod_creation_with_digest.json"),
-            settings: settings,
+            settings,
             expected_validation_result: true,
         };
 
