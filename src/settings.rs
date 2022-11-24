@@ -19,7 +19,7 @@ pub(crate) struct Settings {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-#[serde(untagged)]
+#[serde(untagged, rename_all = "camelCase")]
 pub(crate) enum Signature {
     PubKeys(PubKeys),
     Keyless(Keyless),
@@ -37,6 +37,7 @@ pub(crate) struct PubKeys {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct Keyless {
     pub(crate) image: String,
     pub(crate) keyless: Vec<KeylessInfo>,
@@ -44,6 +45,7 @@ pub(crate) struct Keyless {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct KeylessGithubActionsInfo {
     /// owner of the repository. E.g: octocat
     pub(crate) owner: String,
@@ -52,6 +54,7 @@ pub(crate) struct KeylessGithubActionsInfo {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct GithubActions {
     /// String pointing to the object (e.g.: `registry.testing.lan/busybox:1.0.0`)
     pub(crate) image: String,
@@ -62,6 +65,7 @@ pub(crate) struct GithubActions {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct Certificate {
     /// String pointing to the object (e.g.: `registry.testing.lan/busybox:1.0.0`)
     pub(crate) image: String,
@@ -83,6 +87,7 @@ pub(crate) struct Certificate {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct KeylessPrefix {
     /// String pointing to the object (e.g.: `registry.testing.lan/busybox:1.0.0`)
     pub(crate) image: String,
