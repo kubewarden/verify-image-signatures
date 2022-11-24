@@ -32,7 +32,7 @@ spec:
   settings:
     signatures:
     - image: "*"
-      github_actions:
+      githubActions:
         owner: "kubewarden"
         repo: "app-example" 
 ```
@@ -52,20 +52,20 @@ Signature types:
   ``` yaml
   signatures:
   - image: "ghcr.io/kubewarden/*"
-    github_actions:
+    githubActions:
       owner: "kubewarden"
       repo: "app-example" #optional
   ```
 
 2. Keyless subject prefix. It will verify that the issuer is `https://token.actions.githubusercontent.com` and the subject starts with `https://github.com/kubewarden/app-example/.github/workflows/ci.yml@refs/tags/`
-   `url_prefix` is sanitized to prevent typosquatting.
+   `urlPrefix` is sanitized to prevent typosquatting.
 
   ``` yaml
   signatures:
   - image: "ghcr.io/kubewarden/*"
-    keyless_prefix:
+    keylessPrefix:
       - issuer: "https://token.actions.githubusercontent.com"
-        url_prefix: "https://github.com/kubewarden/app-example/.github/workflows/ci.yml@refs/tags/"
+        urlPrefix: "https://github.com/kubewarden/app-example/.github/workflows/ci.yml@refs/tags/"
   ``` 
 
 
@@ -74,7 +74,7 @@ Signature types:
   ``` yaml
   modifyImagesWithDigest: false #optional. default is true
   signatures:
-    - image: "ghcr.io/kubewarden/*" 
+    - image: "ghcr.io/kubewarden/*"
       keyless:
         - issuer: "https://token.actions.githubusercontent.com"
           subject: "kubewarden"
@@ -94,9 +94,9 @@ Signature types:
 
 5. Certificate. It will verify that the image has been signed using the Certificate provided by the user.
   The `certificate` must be PEM encoded. Optionally the settings can have
-  the list of PEM encoded certificates that can create the `certificate_chain`
+  the list of PEM encoded certificates that can create the `certificateChain`
   used to verify the given `certificate`.
-  The `require_rekor_bundle` should be set to `true` to have a stronger
+  The `requireRekorBundle` should be set to `true` to have a stronger
   verification process. When set to `true`, the signature must have a Rekor
   bundle and the signature must have been created during the validity
   time frame of the `certificate`.
@@ -108,7 +108,7 @@ Signature types:
         -----BEGIN CERTIFICATE-----
         XXX
         -----END CERTIFICATE-----
-      certificate_chain:
+      certificateChain:
       - |
         -----BEGIN CERTIFICATE-----
         <intermediate cert>
@@ -117,7 +117,7 @@ Signature types:
         -----BEGIN CERTIFICATE-----
         <root CA>
         -----END CERTIFICATE-----
-      require_rekor_bundle: true
+      requireRekorBundle: true
   ```
 
 ## License
