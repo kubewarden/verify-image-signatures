@@ -25,6 +25,7 @@ pub(crate) enum Signature {
     Keyless(Keyless),
     GithubActions(GithubActions),
     KeylessPrefix(KeylessPrefix),
+    Certificate(Certificate),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -54,8 +55,29 @@ pub(crate) struct KeylessGithubActionsInfo {
 pub(crate) struct GithubActions {
     /// String pointing to the object (e.g.: `registry.testing.lan/busybox:1.0.0`)
     pub(crate) image: String,
-    // GitHub Actions information that must be found in the signature
+    /// GitHub Actions information that must be found in the signature
     pub(crate) github_actions: KeylessGithubActionsInfo,
+    /// Optional - Annotations that must have been provided by all signers when they signed the OCI artifact
+    pub(crate) annotations: Option<HashMap<String, String>>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub(crate) struct Certificate {
+    /// String pointing to the object (e.g.: `registry.testing.lan/busybox:1.0.0`)
+    pub(crate) image: String,
+    /// PEM encoded certificate used to verify the signature
+    pub(crate) certificate: String,
+    /// Optional - the certificate chain that is used to verify the provided
+    /// certificate. When not specified, the certificate is assumed to be trusted
+    pub(crate) certificate_chain: Option<Vec<String>>,
+    /// Require the  signature layer to have a Rekor bundle.
+    /// Having a Rekor bundle allows further checks to be performed,
+    /// like ensuring the signature has been produced during the validity
+    /// time frame of the certificate.
+    ///
+    /// It is recommended to set this value to `true` to have a more secure
+    /// verification process.
+    pub(crate) require_rekor_bundle: bool,
     /// Optional - Annotations that must have been provided by all signers when they signed the OCI artifact
     pub(crate) annotations: Option<HashMap<String, String>>,
 }
@@ -77,6 +99,9 @@ impl kubewarden::settings::Validatable for Settings {
         if self.signatures.is_empty() {
             return Err("Signatures must not be empty".to_string());
         }
+
+        // TODO: when a certificate is being used, ensure the certificate
+        // can be trusted. This requires a new waPC function being written
 
         Ok(())
     }
