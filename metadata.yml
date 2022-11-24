@@ -123,11 +123,11 @@ annotations:
           certificate_chain:
           - |
             -----BEGIN CERTIFICATE-----
-            XXX
+            <intermediate cert>
             -----END CERTIFICATE-----
           - |
             -----BEGIN CERTIFICATE-----
-            xxx
+            <root CA>
             -----END CERTIFICATE-----
           require_rekor_bundle: true
       ```

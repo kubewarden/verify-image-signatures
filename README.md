@@ -115,7 +115,7 @@ Signature types:
         -----END CERTIFICATE-----
       - |
         -----BEGIN CERTIFICATE-----
-        xxx
+        <root CA>
         -----END CERTIFICATE-----
       require_rekor_bundle: true
   ```
