@@ -1,7 +1,11 @@
 use crate::LOG_DRAIN;
+use kubewarden::host_capabilities::crypto::{
+    verify_cert, Certificate as SDKCert, CertificateEncoding,
+};
 use kubewarden::host_capabilities::verification::{KeylessInfo, KeylessPrefixInfo};
 use std::collections::HashMap;
 
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use slog::info;
 
@@ -105,9 +109,47 @@ impl kubewarden::settings::Validatable for Settings {
             return Err("Signatures must not be empty".to_string());
         }
 
-        // TODO: when a certificate is being used, ensure the certificate
-        // can be trusted. This requires a new waPC function being written
-
+        // when a certificate is being used, ensure it can be trusted
+        for signature in self.signatures.iter() {
+            if let Signature::Certificate(s) = signature {
+                // build sdk structs:
+                let cert = SDKCert {
+                    encoding: CertificateEncoding::Pem,
+                    data: s.certificate.clone().into_bytes(),
+                };
+                let cert_chain_opt: Option<Vec<SDKCert>> = match &s.certificate_chain {
+                    Some(chain_vec) => {
+                        // build vec of sdk certs:
+                        let mut chain_sdk: Vec<SDKCert> = vec![];
+                        chain_vec.iter().for_each(|d| {
+                            chain_sdk.push(SDKCert {
+                                encoding: CertificateEncoding::Pem,
+                                data: d.clone().into_bytes(),
+                            });
+                        });
+                        Some(chain_sdk)
+                    }
+                    None => None,
+                };
+                match verify_cert(cert, cert_chain_opt, Some(Utc::now().to_rfc3339())) {
+                    Ok(verified) => {
+                        if !verified {
+                            return Err(format!(
+                                "Signatures for image {:?}: Certificate not trusted",
+                                s.image
+                            ));
+                        }
+                    }
+                    Err(e) => {
+                        return Err(format!(
+                            "Signatures for image {:?}: Certificate not trusted: {:?}",
+                            s.image,
+                            e.to_string()
+                        ))
+                    }
+                };
+            }
+        }
         Ok(())
     }
 }
