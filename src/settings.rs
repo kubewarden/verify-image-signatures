@@ -1,4 +1,7 @@
 use crate::LOG_DRAIN;
+use kubewarden::host_capabilities::crypto::{
+    verify_cert, BoolWithReason, Certificate as SDKCert, CertificateEncoding,
+};
 use kubewarden::host_capabilities::verification::{KeylessInfo, KeylessPrefixInfo};
 use std::collections::HashMap;
 
@@ -105,9 +108,48 @@ impl kubewarden::settings::Validatable for Settings {
             return Err("Signatures must not be empty".to_string());
         }
 
-        // TODO: when a certificate is being used, ensure the certificate
-        // can be trusted. This requires a new waPC function being written
+        // when a certificate is being used, ensure it can be trusted
+        'signatures: for signature in self.signatures.iter() {
+            if let Signature::Certificate(s) = signature {
+                // build sdk structs:
+                let cert = SDKCert {
+                    encoding: CertificateEncoding::Pem,
+                    data: s.certificate.to_owned().into_bytes(),
+                };
+                let cert_chain_opt: Option<Vec<SDKCert>> = s.certificate_chain.as_ref().map({
+                    |chain| {
+                        chain
+                            .iter()
+                            .map(|c| SDKCert {
+                                encoding: CertificateEncoding::Pem,
+                                data: c.to_owned().into_bytes(),
+                            })
+                            .collect()
+                    }
+                });
 
+                match verify_cert(cert, cert_chain_opt, None) {
+                    Ok(b) => {
+                        match b {
+                            BoolWithReason::True => continue 'signatures, // cert verified
+                            BoolWithReason::False(reason) => {
+                                return Err(format!(
+                                    "Signatures for image {}: Certificate not trusted: {}",
+                                    s.image, reason
+                                ))
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        return Err(format!(
+                            "Signatures for image {}: Error when verifying certificate: {:?}",
+                            s.image,
+                            e.to_string()
+                        ))
+                    }
+                };
+            }
+        }
         Ok(())
     }
 }
@@ -144,6 +186,25 @@ mod tests {
         };
 
         assert!(settings.validate().is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn validate_settings_invalid_cert() -> Result<(), ()> {
+        let settings = Settings {
+            signatures: vec![Signature::Certificate(Certificate {
+                image: "myimage".to_string(),
+                certificate: "this is not a PEM cert".to_string(),
+                certificate_chain: None,
+                require_rekor_bundle: false,
+                annotations: None,
+            })],
+            modify_images_with_digest: true,
+        };
+
+        assert!(settings.validate().is_err());
+        // not checking error msg as we are using mocks
+
         Ok(())
     }
 }
