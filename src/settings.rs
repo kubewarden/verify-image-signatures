@@ -188,4 +188,23 @@ mod tests {
         assert!(settings.validate().is_err());
         Ok(())
     }
+
+    #[test]
+    fn validate_settings_invalid_cert() -> Result<(), ()> {
+        let settings = Settings {
+            signatures: vec![Signature::Certificate(Certificate {
+                image: "myimage".to_string(),
+                certificate: "this is not a PEM cert".to_string(),
+                certificate_chain: None,
+                require_rekor_bundle: false,
+                annotations: None,
+            })],
+            modify_images_with_digest: true,
+        };
+
+        assert!(settings.validate().is_err());
+        // not checking error msg as we are using mocks
+
+        Ok(())
+    }
 }
