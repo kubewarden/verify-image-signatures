@@ -32,13 +32,13 @@
   # Need to run the command inside of `bash -c` because of a bats
   # limitation: https://bats-core.readthedocs.io/en/stable/gotchas.html?highlight=pipe#my-piped-command-does-not-work-under-run
 
-	run bash -c 'kwctl run \
+  run bash -c 'kwctl run \
     --request-path test_data/pod_creation_signed.json \
     --settings-path test_data/settings-mutation-disabled.yaml \
     annotated-policy.wasm | jq -r ".patch"'
-	[ "$status" -eq 0 ]
-	echo "$output"
-	[ $(expr "$output" : 'null') -ne 0 ]
+  [ "$status" -eq 0 ]
+  echo "$output"
+  [ $(expr "$output" : 'null') -ne 0 ]
 }
 
 @test "Accept a valid signature in a Deployment" {
@@ -130,3 +130,17 @@
   [ $(expr "$output" : '.*"allowed":false.*') -ne 0 ]
   [ $(expr "$output" : '.*is not accepted: verification of image ghcr.io/kubewarden/test-verify-image-signatures:unsigned failed.*') -ne 0 ]
 }
+
+@test "Certificate verification with Rekor enabled" {
+  # Need to run the command inside of `bash -c` because of a bats
+  # limitation: https://bats-core.readthedocs.io/en/stable/gotchas.html?highlight=pipe#my-piped-command-does-not-work-under-run
+
+  run bash -c 'kwctl run \
+    --request-path test_data/pod_creation_signed_with_certificate.json \
+    --settings-path test_data/settings-pod_signed_with_cert_and_rekor.yaml \
+    annotated-policy.wasm | jq -r ".patch | @base64d"'
+  [ "$status" -eq 0 ]
+  echo "$output"
+  [ $(expr "$output" : '.*ghcr.io/kubewarden/tests/pod-privileged:v0.2.1@sha256:db48aecd83c2826eba154a84c4fbabe0977f96b3360b4c6098578eae5c2d2882.*') -ne 0 ]
+}
+

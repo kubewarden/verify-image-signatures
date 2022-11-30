@@ -69,6 +69,22 @@ sign: import-cosign.key bundle.pem
 		--certificate-chain bundle.pem \
 		$(IMAGE)
 
+.PHONY: sign-rekor
+sign-rekor: import-cosign.key bundle.pem
+	@if [ -z "$(IMAGE)" ]; then \
+		echo Specify the image to be signed via IMAGE='img' make sign; \
+		exit 1;\
+	else \
+		tput setaf 1; \
+		echo Signing $(IMAGE); \
+		tput sgr0; \
+	fi
+	COSIGN_PASSWORD="" COSIGN_EXPERIMENTAL=1 cosign sign \
+		--key import-cosign.key \
+		--certificate user-1-sigstore.pem \
+		--certificate-chain bundle.pem \
+		$(IMAGE)
+
 .PHONY: verify
 verify: bundle.pem
 	@if [ -z "$(IMAGE)" ]; then \
