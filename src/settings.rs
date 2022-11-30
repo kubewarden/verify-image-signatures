@@ -1,6 +1,6 @@
 use crate::LOG_DRAIN;
 use kubewarden::host_capabilities::crypto::{
-    verify_cert, Certificate as SDKCert, CertificateEncoding,
+    verify_cert, BoolWithReason, Certificate as SDKCert, CertificateEncoding,
 };
 use kubewarden::host_capabilities::verification::{KeylessInfo, KeylessPrefixInfo};
 use std::collections::HashMap;
@@ -109,39 +109,40 @@ impl kubewarden::settings::Validatable for Settings {
         }
 
         // when a certificate is being used, ensure it can be trusted
-        for signature in self.signatures.iter() {
+        'signatures: for signature in self.signatures.iter() {
             if let Signature::Certificate(s) = signature {
                 // build sdk structs:
                 let cert = SDKCert {
                     encoding: CertificateEncoding::Pem,
-                    data: s.certificate.clone().into_bytes(),
+                    data: s.certificate.to_owned().into_bytes(),
                 };
-                let cert_chain_opt: Option<Vec<SDKCert>> = match &s.certificate_chain {
-                    Some(chain_vec) => {
-                        // build vec of sdk certs:
-                        let mut chain_sdk: Vec<SDKCert> = vec![];
-                        chain_vec.iter().for_each(|d| {
-                            chain_sdk.push(SDKCert {
+                let cert_chain_opt: Option<Vec<SDKCert>> = s.certificate_chain.as_ref().map({
+                    |chain| {
+                        chain
+                            .iter()
+                            .map(|c| SDKCert {
                                 encoding: CertificateEncoding::Pem,
-                                data: d.clone().into_bytes(),
-                            });
-                        });
-                        Some(chain_sdk)
+                                data: c.to_owned().into_bytes(),
+                            })
+                            .collect()
                     }
-                    None => None,
-                };
-                    Ok(verified) => {
-                        if !verified {
-                            return Err(format!(
-                                "Signatures for image {:?}: Certificate not trusted",
-                                s.image
-                            ));
+                });
+
                 match verify_cert(cert, cert_chain_opt, None) {
+                    Ok(b) => {
+                        match b {
+                            BoolWithReason::True => continue 'signatures, // cert verified
+                            BoolWithReason::False(reason) => {
+                                return Err(format!(
+                                    "Signatures for image {}: Certificate not trusted: {}",
+                                    s.image, reason
+                                ))
+                            }
                         }
                     }
                     Err(e) => {
                         return Err(format!(
-                            "Signatures for image {:?}: Certificate not trusted: {:?}",
+                            "Signatures for image {}: Error when verifying certificate: {:?}",
                             s.image,
                             e.to_string()
                         ))
