@@ -5,7 +5,6 @@ use kubewarden::host_capabilities::crypto::{
 use kubewarden::host_capabilities::verification::{KeylessInfo, KeylessPrefixInfo};
 use std::collections::HashMap;
 
-use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use slog::info;
 
@@ -131,13 +130,13 @@ impl kubewarden::settings::Validatable for Settings {
                     }
                     None => None,
                 };
-                match verify_cert(cert, cert_chain_opt, Some(Utc::now().to_rfc3339())) {
                     Ok(verified) => {
                         if !verified {
                             return Err(format!(
                                 "Signatures for image {:?}: Certificate not trusted",
                                 s.image
                             ));
+                match verify_cert(cert, cert_chain_opt, None) {
                         }
                     }
                     Err(e) => {
