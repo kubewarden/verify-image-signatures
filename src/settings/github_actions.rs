@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;
+use validator::Validate;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -11,10 +12,11 @@ pub(crate) struct KeylessGithubActionsInfo {
     pub(crate) repo: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Validate)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct GithubActions {
     /// String pointing to the object (e.g.: `registry.testing.lan/busybox:1.0.0`)
+    #[validate(length(min = 1))]
     pub(crate) image: String,
     /// GitHub Actions information that must be found in the signature
     pub(crate) github_actions: KeylessGithubActionsInfo,

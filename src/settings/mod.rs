@@ -3,6 +3,9 @@ use crate::LOG_DRAIN;
 use serde::{Deserialize, Serialize};
 use slog::info;
 use std::fmt;
+use validator::Validate;
+
+mod validation_helpers;
 
 mod pub_keys;
 pub(crate) use pub_keys::PubKeys;
@@ -59,10 +62,14 @@ impl fmt::Display for Signature {
 impl Signature {
     fn validate(&self) -> Result<(), String> {
         match self {
-            Signature::PubKeys(_) => Ok(()),
-            Signature::Keyless(_) => Ok(()),
-            Signature::GithubActions(_) => Ok(()),
-            Signature::KeylessPrefix(_) => Ok(()),
+            Signature::PubKeys(pub_keys) => pub_keys.validate().map_err(|e| e.to_string()),
+            Signature::Keyless(keyless) => keyless.validate().map_err(|e| e.to_string()),
+            Signature::GithubActions(github_actions) => {
+                github_actions.validate().map_err(|e| e.to_string())
+            }
+            Signature::KeylessPrefix(keyless_prefix) => {
+                keyless_prefix.validate().map_err(|e| e.to_string())
+            }
             Signature::Certificate(cert) => cert.validate(),
         }
     }
