@@ -92,8 +92,9 @@ Signature types:
         env: prod
   ``` 
 
-5. Certificate. It will verify that the image has been signed using the Certificate provided by the user.
-  The `certificate` must be PEM encoded. Optionally the settings can have
+5. Certificate. It will verify that the image has been signed using all the
+  certificates provided by the user.
+  The certificates must be PEM encoded. Optionally the settings can have
   the list of PEM encoded certificates that can create the `certificateChain`
   used to verify the given `certificate`.
   The `requireRekorBundle` should be set to `true` to have a stronger
@@ -101,12 +102,20 @@ Signature types:
   bundle and the signature must have been created during the validity
   time frame of the `certificate`.
 
+  The following configuration requires all the container images coming from
+  `registry.acme.org/secure-project` to be signed both by Alice and by Bob.
+
   ```yaml
   signatures:
-    - image: "registry-testing.svc.lan/kubewarden/pod-privileged:v0.1.9"
-      certificate: |
+    - image: "registry.acme.org/secure-project/*"
+      certificates:
+      - |
         -----BEGIN CERTIFICATE-----
-        XXX
+        alice's cert
+        -----END CERTIFICATE-----
+      - |
+        -----BEGIN CERTIFICATE-----
+        bob's cert
         -----END CERTIFICATE-----
       certificateChain:
       - |
@@ -118,7 +127,10 @@ Signature types:
         <root CA>
         -----END CERTIFICATE-----
       requireRekorBundle: true
+      annotations: #optional
+        env: prod
   ```
+
 
 ## License
 

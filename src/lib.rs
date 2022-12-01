@@ -10,7 +10,7 @@ use k8s_openapi::api::core::v1::{Container, EphemeralContainer, PodSpec, Replica
 
 extern crate kubewarden_policy_sdk as kubewarden;
 #[cfg(test)]
-use crate::tests::mock_sdk::{
+use crate::tests::mock_verification_sdk::{
     verify_certificate, verify_keyless_exact_match, verify_keyless_github_actions,
     verify_keyless_prefix_match, verify_pub_keys_image,
 };
@@ -383,18 +383,30 @@ where
                 Signature::Certificate(s) => {
                     // verify if the name matches the image name provided
                     if WildMatch::new(s.image.as_str()).matches(container_image.as_str()) {
-                        handle_verification_response(
-                            verify_certificate(
+                        let mut response: Result<VerificationResponse> =
+                            Err(anyhow::anyhow!("Cannot verify"));
+
+                        for certificate in &s.certificates {
+                            response = verify_certificate(
                                 container_image.as_str(),
-                                s.certificate.clone(),
+                                certificate.clone(),
                                 s.certificate_chain.clone(),
                                 s.require_rekor_bundle,
                                 s.annotations.clone(),
-                            ),
+                            );
+                            // All the certificates must be verified. As soon as one of
+                            // them cannot be used to verify the image -> break from the
+                            // loop and propagate the verification failure
+                            if response.is_err() {
+                                break;
+                            }
+                        }
+                        handle_verification_response(
+                            response,
                             container_image.as_str(),
                             &mut container_with_images_digests[i],
                             policy_verification_errors,
-                        );
+                        )
                     }
                 }
             }
@@ -461,7 +473,22 @@ mod tests {
     use serial_test::serial;
 
     #[automock()]
-    pub mod sdk {
+    pub mod crypto_sdk {
+        use anyhow::Result;
+        use kubewarden::host_capabilities::crypto::{BoolWithReason, Certificate};
+
+        #[allow(dead_code)]
+        pub fn verify_cert(
+            _cert: Certificate,
+            _cert_chain: Option<Vec<Certificate>>,
+            _not_after: Option<String>,
+        ) -> Result<BoolWithReason> {
+            Ok(BoolWithReason::True)
+        }
+    }
+
+    #[automock()]
+    pub mod verification_sdk {
         use anyhow::Result;
         use kubewarden::host_capabilities::verification::{
             KeylessInfo, KeylessPrefixInfo, VerificationResponse,
@@ -541,7 +568,7 @@ mod tests {
     #[test]
     #[serial]
     fn pub_keys_validation_pass_with_mutation() {
-        let ctx = mock_sdk::verify_pub_keys_image_context();
+        let ctx = mock_verification_sdk::verify_pub_keys_image_context();
         ctx.expect().times(1).returning(|_, _, _| {
             Ok(VerificationResponse {
                 is_trusted: true,
@@ -590,7 +617,7 @@ mod tests {
     #[test]
     #[serial]
     fn pub_keys_validation_pass_with_no_mutation() {
-        let ctx = mock_sdk::verify_pub_keys_image_context();
+        let ctx = mock_verification_sdk::verify_pub_keys_image_context();
         ctx.expect().times(1).returning(|_, _, _| {
             Ok(VerificationResponse {
                 is_trusted: true,
@@ -623,7 +650,7 @@ mod tests {
     #[test]
     #[serial]
     fn pub_keys_validation_dont_pass() {
-        let ctx = mock_sdk::verify_pub_keys_image_context();
+        let ctx = mock_verification_sdk::verify_pub_keys_image_context();
         ctx.expect()
             .times(1)
             .returning(|_, _, _| Err(anyhow!("error")));
@@ -652,7 +679,7 @@ mod tests {
     #[test]
     #[serial]
     fn keyless_validation_pass_with_mutation() {
-        let ctx = mock_sdk::verify_keyless_exact_match_context();
+        let ctx = mock_verification_sdk::verify_keyless_exact_match_context();
         ctx.expect().times(1).returning(|_, _, _| {
             Ok(VerificationResponse {
                 is_trusted: true,
@@ -704,7 +731,7 @@ mod tests {
     #[test]
     #[serial]
     fn keyless_validation_dont_pass() {
-        let ctx = mock_sdk::verify_keyless_exact_match_context();
+        let ctx = mock_verification_sdk::verify_keyless_exact_match_context();
         ctx.expect()
             .times(1)
             .returning(|_, _, _| Err(anyhow!("error")));
@@ -732,19 +759,62 @@ mod tests {
     #[test]
     #[serial]
     fn certificate_validation_pass_with_no_mutation() {
-        let ctx = mock_sdk::verify_certificate_context();
-        ctx.expect().times(1).returning(|_, _, _, _, _| {
-            Ok(VerificationResponse {
-                is_trusted: true,
-                digest: "sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e"
-                    .to_string(),
-            })
-        });
+        let ctx = mock_verification_sdk::verify_certificate_context();
+        ctx.expect()
+            .times(1)
+            .returning(|_, certificate, _, _, _| match certificate.as_str() {
+                "good-cert" => Ok(VerificationResponse {
+                    is_trusted: true,
+                    digest:
+                        "sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e"
+                            .to_string(),
+                }),
+                _ => Err(anyhow!("not good-cert")),
+            });
 
         let settings: Settings = Settings {
             signatures: vec![Signature::Certificate(Certificate {
                 image: "ghcr.io/kubewarden/test-verify-image-signatures:*".to_string(),
-                certificate: "cert".to_string(),
+                certificates: vec!["good-cert".to_string()],
+                certificate_chain: None,
+                require_rekor_bundle: true,
+                annotations: None,
+            })],
+            modify_images_with_digest: false,
+        };
+
+        let tc = Testcase {
+            name: String::from("It should successfully validate the ghcr.io/kubewarden/test-verify-image-signatures container"),
+            fixture_file: String::from("test_data/pod_creation_signed.json"),
+            settings,
+            expected_validation_result: true,
+        };
+
+        let response = tc.eval(validate).unwrap();
+        assert_eq!(response.accepted, true);
+        assert!(response.mutated_object.is_none());
+    }
+
+    #[test]
+    #[serial]
+    fn certificate_validation_pass_with_multiple_good_keys() {
+        let ctx = mock_verification_sdk::verify_certificate_context();
+        ctx.expect()
+            .times(2)
+            .returning(|_, certificate, _, _, _| match certificate.as_str() {
+                "good-cert1" | "good-cert2" => Ok(VerificationResponse {
+                    is_trusted: true,
+                    digest:
+                        "sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e"
+                            .to_string(),
+                }),
+                _ => Err(anyhow!("not good-cert")),
+            });
+
+        let settings: Settings = Settings {
+            signatures: vec![Signature::Certificate(Certificate {
+                image: "ghcr.io/kubewarden/test-verify-image-signatures:*".to_string(),
+                certificates: vec!["good-cert1".to_string(), "good-cert2".to_string()],
                 certificate_chain: None,
                 require_rekor_bundle: true,
                 annotations: None,
@@ -767,15 +837,24 @@ mod tests {
     #[test]
     #[serial]
     fn certificate_validation_dont_pass() {
-        let ctx = mock_sdk::verify_certificate_context();
+        let ctx = mock_verification_sdk::verify_certificate_context();
         ctx.expect()
-            .times(1)
-            .returning(|_, _, _, _, _| Err(anyhow!("error")));
+            .times(2)
+            .returning(|_, certificate, _, _, _| match certificate.as_str() {
+                "good-cert" => Ok(VerificationResponse {
+                    is_trusted: true,
+                    digest:
+                        "sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e"
+                            .to_string(),
+                }),
+                _ => Err(anyhow!("not good-cert")),
+            });
 
+        // validation with 2 certs, one of the is good the other isn't
         let settings: Settings = Settings {
             signatures: vec![Signature::Certificate(Certificate {
                 image: "ghcr.io/kubewarden/test-verify-image-signatures:*".to_string(),
-                certificate: "cert".to_string(),
+                certificates: vec!["good-cert".to_string(), "bad-cert".to_string()],
                 certificate_chain: None,
                 require_rekor_bundle: true,
                 annotations: None,
@@ -798,12 +877,12 @@ mod tests {
     #[test]
     #[serial]
     fn validation_pass_when_there_is_no_matching_containers() {
-        let ctx = mock_sdk::verify_pub_keys_image_context();
+        let ctx = mock_verification_sdk::verify_pub_keys_image_context();
         ctx.expect()
             .times(0)
             .returning(|_, _, _| Err(anyhow!("error")));
 
-        let ctx = mock_sdk::verify_keyless_exact_match_context();
+        let ctx = mock_verification_sdk::verify_keyless_exact_match_context();
         ctx.expect()
             .times(0)
             .returning(|_, _, _| Err(anyhow!("error")));
@@ -839,7 +918,7 @@ mod tests {
     #[test]
     #[serial]
     fn validation_with_multiple_containers_fail_if_one_fails() {
-        let ctx_pub_keys = mock_sdk::verify_pub_keys_image_context();
+        let ctx_pub_keys = mock_verification_sdk::verify_pub_keys_image_context();
         ctx_pub_keys.expect().times(1).returning(|_, _, _| {
             Ok(VerificationResponse {
                 is_trusted: true,
@@ -848,7 +927,7 @@ mod tests {
             })
         });
 
-        let ctx_keyless = mock_sdk::verify_keyless_exact_match_context();
+        let ctx_keyless = mock_verification_sdk::verify_keyless_exact_match_context();
         ctx_keyless
             .expect()
             .times(1)
@@ -888,7 +967,7 @@ mod tests {
     #[test]
     #[serial]
     fn validation_with_multiple_containers_with_mutation_pass() {
-        let ctx_pub_keys = mock_sdk::verify_pub_keys_image_context();
+        let ctx_pub_keys = mock_verification_sdk::verify_pub_keys_image_context();
         ctx_pub_keys.expect().times(1).returning(|_, _, _| {
             Ok(VerificationResponse {
                 is_trusted: true,
@@ -897,7 +976,7 @@ mod tests {
             })
         });
 
-        let ctx_keyless = mock_sdk::verify_keyless_exact_match_context();
+        let ctx_keyless = mock_verification_sdk::verify_keyless_exact_match_context();
         ctx_keyless.expect().times(1).returning(|_, _, _| {
             Ok(VerificationResponse {
                 is_trusted: true,
@@ -964,7 +1043,7 @@ mod tests {
     #[test]
     #[serial]
     fn keyless_validation_pass_and_dont_mutate_if_digest_is_present() {
-        let ctx = mock_sdk::verify_keyless_exact_match_context();
+        let ctx = mock_verification_sdk::verify_keyless_exact_match_context();
         ctx.expect().times(1).returning(|_, _, _| {
             Ok(VerificationResponse {
                 is_trusted: true,
@@ -1000,7 +1079,7 @@ mod tests {
     #[test]
     #[serial]
     fn keyless_prefix_validation_pass_and_dont_mutate_if_digest_is_present() {
-        let ctx = mock_sdk::verify_keyless_prefix_match_context();
+        let ctx = mock_verification_sdk::verify_keyless_prefix_match_context();
         ctx.expect().times(1).returning(|_, _, _| {
             Ok(VerificationResponse {
                 is_trusted: true,
@@ -1036,7 +1115,7 @@ mod tests {
     #[test]
     #[serial]
     fn keyless_github_action_validation_pass_and_dont_mutate_if_digest_is_present() {
-        let ctx = mock_sdk::verify_keyless_github_actions_context();
+        let ctx = mock_verification_sdk::verify_keyless_github_actions_context();
         ctx.expect().times(1).returning(|_, _, _, _| {
             Ok(VerificationResponse {
                 is_trusted: true,
@@ -1070,7 +1149,7 @@ mod tests {
     }
 
     fn resource_validation_pass(file: &str) {
-        let ctx = mock_sdk::verify_keyless_exact_match_context();
+        let ctx = mock_verification_sdk::verify_keyless_exact_match_context();
         ctx.expect().times(1).returning(|_, _, _| {
             Ok(VerificationResponse {
                 is_trusted: true,
@@ -1103,7 +1182,7 @@ mod tests {
     }
 
     fn resource_validation_reject(file: &str) {
-        let ctx = mock_sdk::verify_keyless_exact_match_context();
+        let ctx = mock_verification_sdk::verify_keyless_exact_match_context();
         ctx.expect()
             .times(1)
             .returning(|_, _, _| Err(anyhow!("error")));
