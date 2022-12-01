@@ -473,6 +473,21 @@ mod tests {
     use serial_test::serial;
 
     #[automock()]
+    pub mod crypto_sdk {
+        use anyhow::Result;
+        use kubewarden::host_capabilities::crypto::{BoolWithReason, Certificate};
+
+        #[allow(dead_code)]
+        pub fn verify_cert(
+            _cert: Certificate,
+            _cert_chain: Option<Vec<Certificate>>,
+            _not_after: Option<String>,
+        ) -> Result<BoolWithReason> {
+            Ok(BoolWithReason::True)
+        }
+    }
+
+    #[automock()]
     pub mod verification_sdk {
         use anyhow::Result;
         use kubewarden::host_capabilities::verification::{
