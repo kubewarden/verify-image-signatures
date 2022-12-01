@@ -461,7 +461,8 @@ fn add_digest_if_not_present<T>(
 mod tests {
     use super::*;
     use crate::settings::{
-        Certificate, GithubActions, Keyless, KeylessGithubActionsInfo, KeylessPrefix, PubKeys,
+        github_actions::KeylessGithubActionsInfo, Certificate, GithubActions, Keyless,
+        KeylessPrefix, PubKeys,
     };
     use anyhow::anyhow;
     use kubewarden::host_capabilities::verification::{
