@@ -10,7 +10,7 @@ use k8s_openapi::api::core::v1::{Container, EphemeralContainer, PodSpec, Replica
 
 extern crate kubewarden_policy_sdk as kubewarden;
 #[cfg(test)]
-use crate::tests::mock_sdk::{
+use crate::tests::mock_verification_sdk::{
     verify_certificate, verify_keyless_exact_match, verify_keyless_github_actions,
     verify_keyless_prefix_match, verify_pub_keys_image,
 };
@@ -473,7 +473,7 @@ mod tests {
     use serial_test::serial;
 
     #[automock()]
-    pub mod sdk {
+    pub mod verification_sdk {
         use anyhow::Result;
         use kubewarden::host_capabilities::verification::{
             KeylessInfo, KeylessPrefixInfo, VerificationResponse,
@@ -553,7 +553,7 @@ mod tests {
     #[test]
     #[serial]
     fn pub_keys_validation_pass_with_mutation() {
-        let ctx = mock_sdk::verify_pub_keys_image_context();
+        let ctx = mock_verification_sdk::verify_pub_keys_image_context();
         ctx.expect().times(1).returning(|_, _, _| {
             Ok(VerificationResponse {
                 is_trusted: true,
@@ -602,7 +602,7 @@ mod tests {
     #[test]
     #[serial]
     fn pub_keys_validation_pass_with_no_mutation() {
-        let ctx = mock_sdk::verify_pub_keys_image_context();
+        let ctx = mock_verification_sdk::verify_pub_keys_image_context();
         ctx.expect().times(1).returning(|_, _, _| {
             Ok(VerificationResponse {
                 is_trusted: true,
@@ -635,7 +635,7 @@ mod tests {
     #[test]
     #[serial]
     fn pub_keys_validation_dont_pass() {
-        let ctx = mock_sdk::verify_pub_keys_image_context();
+        let ctx = mock_verification_sdk::verify_pub_keys_image_context();
         ctx.expect()
             .times(1)
             .returning(|_, _, _| Err(anyhow!("error")));
@@ -664,7 +664,7 @@ mod tests {
     #[test]
     #[serial]
     fn keyless_validation_pass_with_mutation() {
-        let ctx = mock_sdk::verify_keyless_exact_match_context();
+        let ctx = mock_verification_sdk::verify_keyless_exact_match_context();
         ctx.expect().times(1).returning(|_, _, _| {
             Ok(VerificationResponse {
                 is_trusted: true,
@@ -716,7 +716,7 @@ mod tests {
     #[test]
     #[serial]
     fn keyless_validation_dont_pass() {
-        let ctx = mock_sdk::verify_keyless_exact_match_context();
+        let ctx = mock_verification_sdk::verify_keyless_exact_match_context();
         ctx.expect()
             .times(1)
             .returning(|_, _, _| Err(anyhow!("error")));
@@ -744,7 +744,7 @@ mod tests {
     #[test]
     #[serial]
     fn certificate_validation_pass_with_no_mutation() {
-        let ctx = mock_sdk::verify_certificate_context();
+        let ctx = mock_verification_sdk::verify_certificate_context();
         ctx.expect()
             .times(1)
             .returning(|_, certificate, _, _, _| match certificate.as_str() {
@@ -783,7 +783,7 @@ mod tests {
     #[test]
     #[serial]
     fn certificate_validation_pass_with_multiple_good_keys() {
-        let ctx = mock_sdk::verify_certificate_context();
+        let ctx = mock_verification_sdk::verify_certificate_context();
         ctx.expect()
             .times(2)
             .returning(|_, certificate, _, _, _| match certificate.as_str() {
@@ -822,7 +822,7 @@ mod tests {
     #[test]
     #[serial]
     fn certificate_validation_dont_pass() {
-        let ctx = mock_sdk::verify_certificate_context();
+        let ctx = mock_verification_sdk::verify_certificate_context();
         ctx.expect()
             .times(2)
             .returning(|_, certificate, _, _, _| match certificate.as_str() {
@@ -862,12 +862,12 @@ mod tests {
     #[test]
     #[serial]
     fn validation_pass_when_there_is_no_matching_containers() {
-        let ctx = mock_sdk::verify_pub_keys_image_context();
+        let ctx = mock_verification_sdk::verify_pub_keys_image_context();
         ctx.expect()
             .times(0)
             .returning(|_, _, _| Err(anyhow!("error")));
 
-        let ctx = mock_sdk::verify_keyless_exact_match_context();
+        let ctx = mock_verification_sdk::verify_keyless_exact_match_context();
         ctx.expect()
             .times(0)
             .returning(|_, _, _| Err(anyhow!("error")));
@@ -903,7 +903,7 @@ mod tests {
     #[test]
     #[serial]
     fn validation_with_multiple_containers_fail_if_one_fails() {
-        let ctx_pub_keys = mock_sdk::verify_pub_keys_image_context();
+        let ctx_pub_keys = mock_verification_sdk::verify_pub_keys_image_context();
         ctx_pub_keys.expect().times(1).returning(|_, _, _| {
             Ok(VerificationResponse {
                 is_trusted: true,
@@ -912,7 +912,7 @@ mod tests {
             })
         });
 
-        let ctx_keyless = mock_sdk::verify_keyless_exact_match_context();
+        let ctx_keyless = mock_verification_sdk::verify_keyless_exact_match_context();
         ctx_keyless
             .expect()
             .times(1)
@@ -952,7 +952,7 @@ mod tests {
     #[test]
     #[serial]
     fn validation_with_multiple_containers_with_mutation_pass() {
-        let ctx_pub_keys = mock_sdk::verify_pub_keys_image_context();
+        let ctx_pub_keys = mock_verification_sdk::verify_pub_keys_image_context();
         ctx_pub_keys.expect().times(1).returning(|_, _, _| {
             Ok(VerificationResponse {
                 is_trusted: true,
@@ -961,7 +961,7 @@ mod tests {
             })
         });
 
-        let ctx_keyless = mock_sdk::verify_keyless_exact_match_context();
+        let ctx_keyless = mock_verification_sdk::verify_keyless_exact_match_context();
         ctx_keyless.expect().times(1).returning(|_, _, _| {
             Ok(VerificationResponse {
                 is_trusted: true,
@@ -1028,7 +1028,7 @@ mod tests {
     #[test]
     #[serial]
     fn keyless_validation_pass_and_dont_mutate_if_digest_is_present() {
-        let ctx = mock_sdk::verify_keyless_exact_match_context();
+        let ctx = mock_verification_sdk::verify_keyless_exact_match_context();
         ctx.expect().times(1).returning(|_, _, _| {
             Ok(VerificationResponse {
                 is_trusted: true,
@@ -1064,7 +1064,7 @@ mod tests {
     #[test]
     #[serial]
     fn keyless_prefix_validation_pass_and_dont_mutate_if_digest_is_present() {
-        let ctx = mock_sdk::verify_keyless_prefix_match_context();
+        let ctx = mock_verification_sdk::verify_keyless_prefix_match_context();
         ctx.expect().times(1).returning(|_, _, _| {
             Ok(VerificationResponse {
                 is_trusted: true,
@@ -1100,7 +1100,7 @@ mod tests {
     #[test]
     #[serial]
     fn keyless_github_action_validation_pass_and_dont_mutate_if_digest_is_present() {
-        let ctx = mock_sdk::verify_keyless_github_actions_context();
+        let ctx = mock_verification_sdk::verify_keyless_github_actions_context();
         ctx.expect().times(1).returning(|_, _, _, _| {
             Ok(VerificationResponse {
                 is_trusted: true,
@@ -1134,7 +1134,7 @@ mod tests {
     }
 
     fn resource_validation_pass(file: &str) {
-        let ctx = mock_sdk::verify_keyless_exact_match_context();
+        let ctx = mock_verification_sdk::verify_keyless_exact_match_context();
         ctx.expect().times(1).returning(|_, _, _| {
             Ok(VerificationResponse {
                 is_trusted: true,
@@ -1167,7 +1167,7 @@ mod tests {
     }
 
     fn resource_validation_reject(file: &str) {
-        let ctx = mock_sdk::verify_keyless_exact_match_context();
+        let ctx = mock_verification_sdk::verify_keyless_exact_match_context();
         ctx.expect()
             .times(1)
             .returning(|_, _, _| Err(anyhow!("error")));
