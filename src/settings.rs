@@ -73,7 +73,7 @@ pub(crate) struct Certificate {
     /// String pointing to the object (e.g.: `registry.testing.lan/busybox:1.0.0`)
     pub(crate) image: String,
     /// PEM encoded certificate used to verify the signature
-    pub(crate) certificate: String,
+    pub(crate) certificates: Vec<String>,
     /// Optional - the certificate chain that is used to verify the provided
     /// certificate. When not specified, the certificate is assumed to be trusted
     pub(crate) certificate_chain: Option<Vec<String>>,

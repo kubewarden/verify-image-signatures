@@ -383,18 +383,30 @@ where
                 Signature::Certificate(s) => {
                     // verify if the name matches the image name provided
                     if WildMatch::new(s.image.as_str()).matches(container_image.as_str()) {
-                        handle_verification_response(
-                            verify_certificate(
+                        let mut response: Result<VerificationResponse> =
+                            Err(anyhow::anyhow!("Cannot verify"));
+
+                        for certificate in &s.certificates {
+                            response = verify_certificate(
                                 container_image.as_str(),
-                                s.certificate.clone(),
+                                certificate.clone(),
                                 s.certificate_chain.clone(),
                                 s.require_rekor_bundle,
                                 s.annotations.clone(),
-                            ),
+                            );
+                            // All the certificates must be verified. As soon as one of
+                            // them cannot be used to verify the image -> break from the
+                            // loop and propagate the verification failure
+                            if response.is_err() {
+                                break;
+                            }
+                        }
+                        handle_verification_response(
+                            response,
                             container_image.as_str(),
                             &mut container_with_images_digests[i],
                             policy_verification_errors,
-                        );
+                        )
                     }
                 }
             }
@@ -733,18 +745,61 @@ mod tests {
     #[serial]
     fn certificate_validation_pass_with_no_mutation() {
         let ctx = mock_sdk::verify_certificate_context();
-        ctx.expect().times(1).returning(|_, _, _, _, _| {
-            Ok(VerificationResponse {
-                is_trusted: true,
-                digest: "sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e"
-                    .to_string(),
-            })
-        });
+        ctx.expect()
+            .times(1)
+            .returning(|_, certificate, _, _, _| match certificate.as_str() {
+                "good-cert" => Ok(VerificationResponse {
+                    is_trusted: true,
+                    digest:
+                        "sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e"
+                            .to_string(),
+                }),
+                _ => Err(anyhow!("not good-cert")),
+            });
 
         let settings: Settings = Settings {
             signatures: vec![Signature::Certificate(Certificate {
                 image: "ghcr.io/kubewarden/test-verify-image-signatures:*".to_string(),
-                certificate: "cert".to_string(),
+                certificates: vec!["good-cert".to_string()],
+                certificate_chain: None,
+                require_rekor_bundle: true,
+                annotations: None,
+            })],
+            modify_images_with_digest: false,
+        };
+
+        let tc = Testcase {
+            name: String::from("It should successfully validate the ghcr.io/kubewarden/test-verify-image-signatures container"),
+            fixture_file: String::from("test_data/pod_creation_signed.json"),
+            settings,
+            expected_validation_result: true,
+        };
+
+        let response = tc.eval(validate).unwrap();
+        assert_eq!(response.accepted, true);
+        assert!(response.mutated_object.is_none());
+    }
+
+    #[test]
+    #[serial]
+    fn certificate_validation_pass_with_multiple_good_keys() {
+        let ctx = mock_sdk::verify_certificate_context();
+        ctx.expect()
+            .times(2)
+            .returning(|_, certificate, _, _, _| match certificate.as_str() {
+                "good-cert1" | "good-cert2" => Ok(VerificationResponse {
+                    is_trusted: true,
+                    digest:
+                        "sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e"
+                            .to_string(),
+                }),
+                _ => Err(anyhow!("not good-cert")),
+            });
+
+        let settings: Settings = Settings {
+            signatures: vec![Signature::Certificate(Certificate {
+                image: "ghcr.io/kubewarden/test-verify-image-signatures:*".to_string(),
+                certificates: vec!["good-cert1".to_string(), "good-cert2".to_string()],
                 certificate_chain: None,
                 require_rekor_bundle: true,
                 annotations: None,
@@ -769,13 +824,22 @@ mod tests {
     fn certificate_validation_dont_pass() {
         let ctx = mock_sdk::verify_certificate_context();
         ctx.expect()
-            .times(1)
-            .returning(|_, _, _, _, _| Err(anyhow!("error")));
+            .times(2)
+            .returning(|_, certificate, _, _, _| match certificate.as_str() {
+                "good-cert" => Ok(VerificationResponse {
+                    is_trusted: true,
+                    digest:
+                        "sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e"
+                            .to_string(),
+                }),
+                _ => Err(anyhow!("not good-cert")),
+            });
 
+        // validation with 2 certs, one of the is good the other isn't
         let settings: Settings = Settings {
             signatures: vec![Signature::Certificate(Certificate {
                 image: "ghcr.io/kubewarden/test-verify-image-signatures:*".to_string(),
-                certificate: "cert".to_string(),
+                certificates: vec!["good-cert".to_string(), "bad-cert".to_string()],
                 certificate_chain: None,
                 require_rekor_bundle: true,
                 annotations: None,

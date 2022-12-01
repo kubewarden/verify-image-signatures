@@ -2,7 +2,8 @@
 # behavior
 signatures:
   - image: "ghcr.io/kubewarden/tests/pod-privileged:v0.2.1"
-    certificate: |
+    certificates:
+    - |
       -----BEGIN CERTIFICATE-----
       MIICsjCCAligAwIBAgIUZfoeZRPm91CZevZ1fPbn4+KRd0owCgYIKoZIzj0EAwIw
       gZIxCzAJBgNVBAYTAkRFMRAwDgYDVQQIEwdCYXZhcmlhMRIwEAYDVQQHEwlOdXJl
