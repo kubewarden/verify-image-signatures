@@ -1,0 +1,18 @@
+{
+  "CN": "user2.custom-widgets.com",
+  "key": {
+    "algo": "ecdsa"
+  },
+  "names": [
+  {
+    "C": "DE",
+    "L": "Nuremberg",
+    "O": "Kubewarden",
+    "ST": "Bavaria",
+    "OU": "Kubewarden User"
+  }
+  ],
+  "hosts": [
+    "user2@kubewarden.io"
+  ]
+}

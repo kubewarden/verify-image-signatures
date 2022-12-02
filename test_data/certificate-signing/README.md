@@ -78,6 +78,17 @@ IMAGE=registry-testing.svc.lan/kubewarden/pod-privileged:v0.1.9 make sign
 
 You can see the actual `cosign` commands being printed on the standard output.
 
+### Rekor integration
+
+It's possible to sign the container image using a certificate and send the proof of
+signature into Rekor's transparency log.
+
+This can be done using the following command:
+
+```console
+IMAGE=<OCI URL> make sign-rekor
+```
+
 ## Verifying a container image
 
 This is done using the following command:
