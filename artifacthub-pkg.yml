@@ -1,15 +1,15 @@
 ---
-version: 0.1.6
+version: 0.2.0
 name: verify-image-signatures
 displayName: Verify Image Signatures
-createdAt: '2022-07-19T16:28:15+02:00'
+createdAt: '2022-12-02T17:38:15+02:00'
 description: A Kubewarden Policy that verifies all the signatures of the container
   images referenced by a Pod
 license: Apache-2.0
 homeURL: https://github.com/kubewarden/verify-image-signatures
 containersImages:
 - name: policy
-  image: ghcr.io/kubewarden/policies/verify-image-signatures:v0.1.6
+  image: ghcr.io/kubewarden/policies/verify-image-signatures:v0.2.0
 keywords:
 - pod
 - signature
@@ -17,7 +17,7 @@ keywords:
 - trusted
 links:
 - name: policy
-  url: https://github.com/kubewarden/verify-image-signatures/releases/download/v0.1.6/policy.wasm
+  url: https://github.com/kubewarden/verify-image-signatures/releases/download/v0.2.0/policy.wasm
 - name: source
   url: https://github.com/kubewarden/verify-image-signatures
 provider:
