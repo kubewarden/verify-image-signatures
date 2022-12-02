@@ -144,3 +144,14 @@
   [ $(expr "$output" : '.*ghcr.io/kubewarden/tests/pod-privileged:v0.2.1@sha256:db48aecd83c2826eba154a84c4fbabe0977f96b3360b4c6098578eae5c2d2882.*') -ne 0 ]
 }
 
+@test "Certificate verification with a wrong certificate chain" {
+  run kwctl run \
+    --request-path test_data/pod_creation_signed_with_certificate.json \
+    --settings-path test_data/settings-cert-verification-wrong-cert-chain.yaml \
+    annotated-policy.wasm
+  [ "$status" -eq 1 ]
+  echo "$output"
+  [ $(expr "$output" : '.*Provided settings are not valid.*') -ne 0 ]
+  [ $(expr "$output" : '.*Certificate not trusted: Certificate is not trusted by the provided cert chain.*') -ne 0 ]
+}
+
