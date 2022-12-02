@@ -170,7 +170,7 @@ mod tests {
         let result = settings.validate();
         assert!(result.is_err());
         assert_eq!(
-            "Certificate signature for image myimage: \"Certificate not trusted: not a valid cert\"",
+            "Certificate signature for image myimage: \"not a valid cert\"",
             result.unwrap_err()
         );
         Ok(())

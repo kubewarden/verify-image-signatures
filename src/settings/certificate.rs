@@ -77,9 +77,7 @@ impl Certificate {
                 match verify_cert(sdk_cert, cert_chain_opt.clone(), None) {
                     Ok(b) => match b {
                         BoolWithReason::True => None,
-                        BoolWithReason::False(reason) => {
-                            Some(format!("Certificate not trusted: {}", reason))
-                        }
+                        BoolWithReason::False(reason) => Some(reason),
                     },
                     Err(e) => Some(format!(
                         "Error when verifying certificate: {:?}",
@@ -231,9 +229,6 @@ mod tests {
 
         let result = certificate.validate();
         assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err().as_str(),
-            "Certificate not trusted: not valid"
-        );
+        assert_eq!(result.unwrap_err().as_str(), "not valid");
     }
 }
