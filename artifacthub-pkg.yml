@@ -1,15 +1,15 @@
 ---
-version: 0.2.0
+version: 0.2.1
 name: verify-image-signatures
 displayName: Verify Image Signatures
-createdAt: '2022-12-02T17:38:15+02:00'
+createdAt: '2023-01-19T14:46:21+02:00'
 description: A Kubewarden Policy that verifies all the signatures of the container
   images referenced by a Pod
 license: Apache-2.0
 homeURL: https://github.com/kubewarden/verify-image-signatures
 containersImages:
 - name: policy
-  image: ghcr.io/kubewarden/policies/verify-image-signatures:v0.2.0
+  image: ghcr.io/kubewarden/policies/verify-image-signatures:v0.2.1
 keywords:
 - pod
 - signature
@@ -17,7 +17,7 @@ keywords:
 - trusted
 links:
 - name: policy
-  url: https://github.com/kubewarden/verify-image-signatures/releases/download/v0.2.0/policy.wasm
+  url: https://github.com/kubewarden/verify-image-signatures/releases/download/v0.2.1/policy.wasm
 - name: source
   url: https://github.com/kubewarden/verify-image-signatures
 provider:
@@ -28,3 +28,116 @@ annotations:
   kubewarden/resources: Pod
   kubewarden/mutation: true
   kubewarden/contextAware: false
+  kubewarden/rules: |
+    rules:
+    - apiGroups: [""]
+      apiVersions: ["v1"]
+      resources: ["pods"]
+      operations: ["CREATE", "UPDATE"]
+  kubewarden/questions-ui: |
+    questions:
+    - default: null
+      description: >-
+        This policy validates Sigstore signatures for containers, init container and
+        ephemeral container that match the name provided in the image settings
+        field. It will reject the Pod if any validation fails. If all signature
+        validation pass or there is no container that matches the image name, the
+        Pod will be accepted.
+      group: Settings
+      required: false
+      hide_input: true
+      type: string
+      variable: description
+    - default: PublicKey
+      description: >-
+        The policy takes a list of signatures. A signature can be of two types:
+        public key or keyless. Each signature has an image field which will be used
+        to select the matching containers in the pod that will be evaluated. image
+        supports wildcard. For example, ghcr.io/kubewarden/* will match all images
+        from the kubewarden ghcr repo.
+      group: Settings
+      label: Signature Type
+      options:
+        - PublicKey
+        - Keyless
+      required: false
+      type: enum
+      variable: rule
+    - default: []
+      description: ''
+      group: Settings
+      label: Public key signature
+      show_if: rule=PublicKey
+      hide_input: true
+      type: map[
+      variable: signatures
+      subquestions:
+        - default: ''
+          group: Settings
+          label: Image
+          show_if: rule=PublicKey
+          type: string
+          variable: signatures.image
+        - default: [""]
+          group: Settings
+          label: Public keys
+          show_if: rule=PublicKey
+          type: array[
+          variable: signatures.pubKeys
+        - default: []
+          group: Settings
+          label: Annotations
+          show_if: rule=PublicKey
+          type: map[
+          variable: signatures.annotations
+    - default: []
+      group: Settings
+      label: Keyless signature
+      show_if: rule=Keyless
+      hide_input: true
+      type: map[
+      variable: signatures
+      subquestions:
+        - default: ''
+          group: Settings
+          label: Image
+          show_if: rule=Keyless
+          type: string
+          variable: signatures.image
+        - default: []
+          group: Settings
+          label: Keyless
+          hide_input: true
+          show_if: rule=Keyless
+          type: map[
+          variable: signatures.keyless
+          subquestions:
+            - default: ''
+              group: Settings
+              label: Issuer
+              show_if: rule=Keyless
+              type: string
+              variable: signatures.keyless.issuer
+            - default: ''
+              group: Settings
+              label: Subject
+              show_if: rule=Keyless
+              type: string
+              variable: signatures.keyless.subject
+        - default: []
+          group: Settings
+          label: Annotations
+          show_if: rule=Keyless
+          type: map[
+          variable: signatures.annotations
+    - default: true
+      tooltip: >-
+        This policy also mutates matching images to add the image digest, therefore
+        the version of the deployed image can't change. This mutation can be
+        disabled by setting modifyImagesWithDigest to false.
+      group: Settings
+      label: modifyImagesWithDigest
+      required: false
+      title: Modify images with digest
+      type: boolean
+      variable: modifyImagesWithDigest
