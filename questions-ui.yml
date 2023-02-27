@@ -194,7 +194,7 @@ questions:
       variable: image
     - default: []
       group: Settings
-      label: Public keys
+      label: Certificates
       show_if: rule=Certificate
       type: array[
       value_multiline: true
