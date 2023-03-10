@@ -6,6 +6,7 @@ policy.wasm: $(SOURCE_FILES) Cargo.*
 
 annotated-policy.wasm: policy.wasm metadata.yml
 	kwctl annotate -m metadata.yml -o annotated-policy.wasm policy.wasm
+	kwctl annotate -m metadata.yml -u README.md -o annotated-policy.wasm policy.wasm
 
 .PHONY: fmt
 fmt:
