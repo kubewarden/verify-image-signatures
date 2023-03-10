@@ -4,3 +4,5 @@ jobs:
   test:
     name: run tests and linters
     uses: viccuad/github-actions/.github/workflows/reusable-test-policy-rust.yml@v1
+    with:
+      artifacthub: true
