@@ -1,10 +1,14 @@
----
+# Kubewarden Artifacthub Package config
+#
+# Use this config to submit the policy to https://artifacthub.io.
+#
+# This config can be saved to its default location with:
+#   kwctl scaffold artifacthub > artifacthub-pkg.yml 
 version: 0.2.3
 name: verify-image-signatures
 displayName: Verify Image Signatures
-createdAt: '2023-02-28T13:12:33+00:00'
-description: A Kubewarden Policy that verifies all the signatures of the container
-  images referenced by a Pod
+createdAt: 2023-03-10T15:05:56.281091415Z
+description: A Kubewarden Policy that verifies all the signatures of the container images referenced by a Pod
 license: Apache-2.0
 homeURL: https://github.com/kubewarden/verify-image-signatures
 containersImages:
@@ -20,20 +24,18 @@ links:
   url: https://github.com/kubewarden/verify-image-signatures/releases/download/v0.2.3/policy.wasm
 - name: source
   url: https://github.com/kubewarden/verify-image-signatures
+maintainers:
+- name: Raul Cabello Martin
+  email: raul.cabello@suse.com
+- name: Victor Cuadrado Juan
+  email: vcuadradojuan@suse.de
 provider:
   name: kubewarden
 recommendations:
 - url: https://artifacthub.io/packages/helm/kubewarden/kubewarden-controller
 annotations:
-  kubewarden/resources: Pod
-  kubewarden/mutation: true
-  kubewarden/contextAware: false
-  kubewarden/rules: |
-    rules:
-    - apiGroups: [""]
-      apiVersions: ["v1"]
-      resources: ["pods"]
-      operations: ["CREATE", "UPDATE"]
+  kubewarden/contextAware: 'false'
+  kubewarden/mutation: 'true'
   kubewarden/questions-ui: |
     questions:
     - default: null
@@ -248,3 +250,15 @@ annotations:
           show_if: rule=Certificate
           type: map[
           variable: annotations
+  kubewarden/resources: Pod
+  kubewarden/rules: |
+    - apiGroups:
+      - ''
+      apiVersions:
+      - v1
+      resources:
+      - pods
+      operations:
+      - CREATE
+      - UPDATE
+

@@ -2,7 +2,6 @@ on:
   push:
     branches:
     - main
-    - master
     tags:
     - 'v*'
 
@@ -17,75 +16,14 @@ jobs:
   release:
     needs: test
     permissions:
-      # Required to create GH release
+      # Required to create GH releases
       contents: write
-      # Required to push to ghcr.io
+      # Required to push to GHCR
       packages: write
       # Required by cosign keyless signing
       id-token: write
-    runs-on: ubuntu-latest
 
-    steps:
-      - name: Install dependencies
-        uses: kubewarden/github-actions/policy-gh-action-dependencies@v1
-      - name: Build and annotate policy
-        uses: kubewarden/github-actions/policy-build-rust@v1
-        with:
-          input-wasm: target/wasm32-wasi/release/verify_image_signatures.wasm
-      - name: Run e2e tests
-        run: |
-          make e2e-tests
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Publish Wasm policy artifact to OCI registry with the 'latest' tag
-        shell: bash
-        if: ${{ startsWith(github.ref, 'refs/heads/') }}
-        env:
-          COSIGN_EXPERIMENTAL: 1
-        run: |
-          set -ex
-          echo Pushing policy to OCI container registry
-          IMMUTABLE_REF=$(kwctl push -o json annotated-policy.wasm ghcr.io/kubewarden/policies/verify-image-signatures:latest | jq -r .immutable_ref)
-
-          echo Keyless signing of policy using cosign
-          cosign sign ${IMMUTABLE_REF}
-      - name: Publish Wasm policy artifact to OCI registry with the version tag and 'latest'
-        shell: bash
-        if: ${{ startsWith(github.ref, 'refs/tags/') }}
-        env:
-          COSIGN_EXPERIMENTAL: 1
-        run: |
-          set -ex
-          export OCI_TAG=$(echo $GITHUB_REF | sed -e "s|refs/tags/||")
-
-          echo Pushing policy to OCI container registry - $OCI_TAG
-          IMMUTABLE_REF=$(kwctl push -o json annotated-policy.wasm ghcr.io/kubewarden/policies/verify-image-signatures:${OCI_TAG} | jq -r .immutable_ref)
-
-          echo Keyless signing of policy using cosign
-          cosign sign ${IMMUTABLE_REF}
-      - name: Create Release
-        if: ${{ startsWith(github.ref, 'refs/tags/') }}
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: ${{ contains(github.ref, '-alpha') || contains(github.ref, '-beta') || contains(github.ref, '-rc') }}
-      - name: Upload Release Asset
-        if: ${{ startsWith(github.ref, 'refs/tags/') }}
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: annotated-policy.wasm
-          asset_name: policy.wasm
-          asset_content_type: application/wasm
+    uses: kubewarden/github-actions/.github/workflows/reusable-release-policy-rust.yml@v1
+    with:
+      input-wasm: verify_image_signatures
+      oci-target: ghcr.io/${{ github.repository_owner }}/policies/verify-image-signatures
