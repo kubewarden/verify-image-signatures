@@ -11,7 +11,7 @@ jobs:
 
   test:
     name: run tests and linters
-    uses: kubewarden/github-actions/.github/workflows/reusable-test-policy-rust.yml@v1
+    uses: kubewarden/github-actions/.github/workflows/reusable-test-policy-rust.yml@v2
 
   release:
     needs: test
@@ -23,7 +23,6 @@ jobs:
       # Required by cosign keyless signing
       id-token: write
 
-    uses: kubewarden/github-actions/.github/workflows/reusable-release-policy-rust.yml@v1
+    uses: kubewarden/github-actions/.github/workflows/reusable-release-policy-rust.yml@v2
     with:
-      input-wasm: verify_image_signatures
       oci-target: ghcr.io/${{ github.repository_owner }}/policies/verify-image-signatures
