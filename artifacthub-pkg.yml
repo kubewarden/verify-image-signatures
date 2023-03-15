@@ -4,16 +4,16 @@
 #
 # This config can be saved to its default location with:
 #   kwctl scaffold artifacthub > artifacthub-pkg.yml 
-version: 0.2.4
+version: 0.2.5
 name: verify-image-signatures
 displayName: Verify Image Signatures
-createdAt: 2023-03-15T12:33:15.06624565Z
+createdAt: 2023-03-15T12:35:27.787596932Z
 description: A Kubewarden Policy that verifies all the signatures of the container images referenced by a Pod
 license: Apache-2.0
 homeURL: https://github.com/kubewarden/verify-image-signatures
 containersImages:
 - name: policy
-  image: ghcr.io/kubewarden/policies/verify-image-signatures:v0.2.4
+  image: ghcr.io/kubewarden/policies/verify-image-signatures:v0.2.5
 keywords:
 - pod
 - signature
@@ -21,7 +21,7 @@ keywords:
 - trusted
 links:
 - name: policy
-  url: https://github.com/kubewarden/verify-image-signatures/releases/download/v0.2.4/policy.wasm
+  url: https://github.com/kubewarden/verify-image-signatures/releases/download/v0.2.5/policy.wasm
 - name: source
   url: https://github.com/kubewarden/verify-image-signatures
 maintainers:
