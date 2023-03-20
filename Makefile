@@ -7,8 +7,7 @@ policy.wasm: $(SOURCE_FILES) Cargo.*
 
 artifacthub-pkg.yml: metadata.yml Cargo.toml
 	kwctl scaffold artifacthub --metadata-path metadata.yml --version $(VERSION) \
-		--questions-path questions-ui.yml > artifacthub-pkg.yml.tmp || 	rm -f artifacthub-pkg.yml.tmp
-	mv artifacthub-pkg.yml.tmp artifacthub-pkg.yml
+		--questions-path questions-ui.yml --output artifacthub-pkg.yml
 
 annotated-policy.wasm: policy.wasm metadata.yml artifacthub-pkg.yml
 	kwctl annotate -m metadata.yml -u README.md -o annotated-policy.wasm policy.wasm
