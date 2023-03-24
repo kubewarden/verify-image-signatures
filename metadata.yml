@@ -12,7 +12,6 @@ annotations:
   io.artifacthub.resources: Pod
   io.artifacthub.keywords: pod, signature, sigstore, trusted
   io.kubewarden.policy.ociUrl: ghcr.io/kubewarden/policies/verify-image-signatures
-  # io.kubewarden.hidden-ui: "true"
   # rest
   io.kubewarden.policy.title: verify-image-signatures
   io.kubewarden.policy.description: A Kubewarden Policy that verifies all the signatures of the container images referenced by a Pod
