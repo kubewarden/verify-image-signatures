@@ -22,7 +22,7 @@
   run bash -c 'kwctl run \
     --request-path test_data/pod_creation_signed.json \
     --settings-path test_data/settings-mutation-enabled.yaml \
-    annotated-policy.wasm | jq -r ".patch | @base64d"'
+    annotated-policy.wasm 2>/dev/null | jq -er ".patch | @base64d"'
   [ "$status" -eq 0 ]
   echo "$output"
   [ $(expr "$output" : '.*ghcr.io/kubewarden/test-verify-image-signatures:signed@sha256:1d9d3da4c60d27b77bb96bba738319c1c4424853fdd10f65982f9f2ca2422a72.*') -ne 0 ]
@@ -35,8 +35,8 @@
   run bash -c 'kwctl run \
     --request-path test_data/pod_creation_signed.json \
     --settings-path test_data/settings-mutation-disabled.yaml \
-    annotated-policy.wasm | jq -r ".patch"'
-  [ "$status" -eq 0 ]
+    annotated-policy.wasm 2>/dev/null | jq -er ".patch"'
+  [ "$status" -eq 1 ]
   echo "$output"
   [ $(expr "$output" : 'null') -ne 0 ]
 }
