@@ -1,6 +1,6 @@
 [package]
 name = "verify-image-signatures"
-version = "0.2.6"
+version = "0.2.7"
 authors = ["Raul Cabello <raul.cabello@suse.com>","Víctor Cuadrado <vcuadradojuan@suse.de>"]
 edition = "2021"
 
