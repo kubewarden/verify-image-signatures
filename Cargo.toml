@@ -1,8 +1,8 @@
 [package]
 name = "verify-image-signatures"
-version = "0.2.6"
-authors = ["raulcabello <raul.cabello@suse.com>","viccuad <vcuadradojuan@suse.de>"]
-edition = "2018"
+version = "0.2.7"
+authors = ["Raul Cabello <raul.cabello@suse.com>","Víctor Cuadrado <vcuadradojuan@suse.de>"]
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
