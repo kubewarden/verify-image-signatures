@@ -12,7 +12,7 @@ crate-type = ["cdylib"]
 [dependencies]
 anyhow = "1.0"
 k8s-openapi = { version = "0.18.0", default_features = false, features = ["v1_24"] }
-kubewarden-policy-sdk = "0.9.5"
+kubewarden-policy-sdk = "0.9.6"
 lazy_static = "1.4"
 pem = "3.0.1"
 serde_json = "1.0"
