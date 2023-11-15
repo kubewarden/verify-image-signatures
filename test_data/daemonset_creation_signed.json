@@ -1,8 +1,27 @@
 {
   "uid": "1299d386-525b-4032-98ae-1949f69f9cfc",
   "kind": {
+    "group": "apps",
     "kind": "DaemonSet",
     "version": "v1"
+  },
+  "resource": {
+    "group": "apps",
+    "version": "v1",
+    "resource": "daemonsets"
+  },
+  "operation": "CREATE",
+  "requestKind": {
+    "group": "apps",
+    "version": "v1",
+    "kind": "DaemonSet"
+  },
+  "userInfo": {
+    "username": "alice",
+    "uid": "alice-uid",
+    "groups": [
+      "system:authenticated"
+    ]
   },
   "object": {
     "metadata": {
@@ -20,17 +39,5 @@
         }
       }
     }
-  },
-  "operation": "CREATE",
-  "requestKind": {
-    "version": "v1",
-    "kind": "DaemonSet"
-  },
-  "userInfo": {
-    "username": "alice",
-    "uid": "alice-uid",
-    "groups": [
-      "system:authenticated"
-    ]
   }
 }

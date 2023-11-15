@@ -1,8 +1,14 @@
 {
   "uid": "1299d386-525b-4032-98ae-1949f69f9cfc",
   "kind": {
-    "kind": "ReplicationController",
-    "version": "v1"
+    "group": "",
+    "version": "v1",
+    "kind": "ReplicationController"
+  },
+  "resource": {
+    "group": "",
+    "version": "v1",
+    "resource": "replicationcontrollers"
   },
   "object": {
     "metadata": {
@@ -23,6 +29,7 @@
   },
   "operation": "CREATE",
   "requestKind": {
+    "group": "",
     "version": "v1",
     "kind": "ReplicationController"
   },

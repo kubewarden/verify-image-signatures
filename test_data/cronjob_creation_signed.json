@@ -1,9 +1,28 @@
 {
   "uid": "1299d386-525b-4032-98ae-1949f69f9cfc",
   "kind": {
+    "group": "batch",
     "kind": "CronJob",
     "version": "v1"
   },
+  "resource": {
+    "group": "batch",
+    "version": "v1",
+    "resource": "cronjobs"
+  },
+  "requestKind": {
+    "group": "batch",
+    "version": "v1",
+    "kind": "CronJob"
+  },
+  "userInfo": {
+    "username": "alice",
+    "uid": "alice-uid",
+    "groups": [
+      "system:authenticated"
+    ]
+  },
+  "operation": "CREATE",
   "object": {
     "metadata": {
       "name": "nginx"
@@ -25,17 +44,5 @@
         }
       }
     }
-  },
-  "operation": "CREATE",
-  "requestKind": {
-    "version": "v1",
-    "kind": "Job"
-  },
-  "userInfo": {
-    "username": "alice",
-    "uid": "alice-uid",
-    "groups": [
-      "system:authenticated"
-    ]
   }
 }

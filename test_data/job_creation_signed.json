@@ -1,8 +1,14 @@
 {
   "uid": "1299d386-525b-4032-98ae-1949f69f9cfc",
   "kind": {
-    "kind": "Job",
-    "version": "v1"
+    "group": "batch",
+    "version": "v1",
+    "kind": "Job"
+  },
+  "resource": {
+    "group": "batch",
+    "version": "v1",
+    "resource": "jobs"
   },
   "object": {
     "metadata": {
@@ -23,6 +29,7 @@
   },
   "operation": "CREATE",
   "requestKind": {
+    "group": "batch",
     "version": "v1",
     "kind": "Job"
   },
