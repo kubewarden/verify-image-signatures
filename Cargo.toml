@@ -14,7 +14,7 @@ anyhow = "1.0"
 k8s-openapi = { version = "0.20.0", default_features = false, features = ["v1_27"] }
 kubewarden-policy-sdk = "0.9.8"
 lazy_static = "1.4"
-pem = "3.0.2"
+pem = "3.0.3"
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 slog = "2.7"
