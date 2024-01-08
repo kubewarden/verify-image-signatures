@@ -24,4 +24,4 @@ wildmatch = "2.3.0"
 [dev-dependencies]
 mockall = "0.12"
 rstest = "0.18.2"
-serial_test = "2.0.0"
+serial_test = "3.0.0"
