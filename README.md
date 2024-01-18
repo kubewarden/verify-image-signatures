@@ -24,7 +24,7 @@ spec:
   rules:
     - apiGroups: [""]
       apiVersions: ["v1"]
-      resources: { "pods" }
+      resources: [ "pods" ]
       operations: ["CREATE", "UPDATE"]
     - apiGroups: [""]
       apiVersions: ["v1"]
