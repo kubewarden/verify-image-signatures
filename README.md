@@ -22,12 +22,22 @@ metadata:
 spec:
   module: ghcr.io/kubewarden/policies/verify-image-signatures:v0.1.7
   rules:
-  - apiGroups: ["", "apps", "batch"]
-    apiVersions: ["v1"]
-    resources: ["pods", "deployments", "statefulsets", "replicationcontrollers", "jobs", "cronjobs"]
-    operations:
-    - CREATE
-    - UPDATE
+    - apiGroups: [""]
+      apiVersions: ["v1"]
+      resources: { "pods" }
+      operations: ["CREATE", "UPDATE"]
+    - apiGroups: [""]
+      apiVersions: ["v1"]
+      resources: ["replicationcontrollers"]
+      operations: ["CREATE", "UPDATE"]
+    - apiGroups: ["apps"]
+      apiVersions: ["v1"]
+      resources: ["deployments", "replicasets", "statefulsets", "daemonsets"]
+      operations: ["CREATE", "UPDATE"]
+    - apiGroups: ["batch"]
+      apiVersions: ["v1"]
+      resources: ["jobs", "cronjobs"]
+      operations: ["CREATE", "UPDATE"]
   mutating: true
   settings:
     signatures:
