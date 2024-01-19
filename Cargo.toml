@@ -1,7 +1,10 @@
 [package]
 name = "verify-image-signatures"
-version = "0.2.8"
-authors = ["Raul Cabello <raul.cabello@suse.com>","Víctor Cuadrado <vcuadradojuan@suse.de>"]
+version = "0.2.9"
+authors = [
+  "Raul Cabello <raul.cabello@suse.com>",
+  "Víctor Cuadrado <vcuadradojuan@suse.de>",
+]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -11,7 +14,9 @@ crate-type = ["cdylib"]
 
 [dependencies]
 anyhow = "1.0"
-k8s-openapi = { version = "0.20.0", default_features = false, features = ["v1_27"] }
+k8s-openapi = { version = "0.20.0", default_features = false, features = [
+  "v1_27",
+] }
 kubewarden-policy-sdk = "0.9.9"
 lazy_static = "1.4"
 pem = "3.0.3"

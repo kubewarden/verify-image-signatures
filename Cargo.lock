@@ -924,7 +924,7 @@ dependencies = [
 
 [[package]]
 name = "verify-image-signatures"
-version = "0.2.8"
+version = "0.2.9"
 dependencies = [
  "anyhow",
  "k8s-openapi",
