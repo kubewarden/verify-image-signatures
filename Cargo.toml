@@ -14,10 +14,10 @@ crate-type = ["cdylib"]
 
 [dependencies]
 anyhow = "1.0"
-k8s-openapi = { version = "0.20.0", default_features = false, features = [
+k8s-openapi = { version = "0.21.0", default_features = false, features = [
   "v1_27",
 ] }
-kubewarden-policy-sdk = "0.9.9"
+kubewarden-policy-sdk = "0.9.10"
 lazy_static = "1.4"
 pem = "3.0.3"
 serde_json = "1.0"
