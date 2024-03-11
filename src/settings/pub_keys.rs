@@ -10,7 +10,7 @@ use super::validation_helpers::validate_vector_of_pem_strings;
 pub(crate) struct PubKeys {
     #[validate(length(min = 1))]
     pub(crate) image: String,
-    #[validate(length(min = 1), custom = "validate_vector_of_pem_strings")]
+    #[validate(length(min = 1), custom(function = "validate_vector_of_pem_strings"))]
     pub(crate) pub_keys: Vec<String>,
     pub(crate) annotations: Option<HashMap<String, String>>,
 }
