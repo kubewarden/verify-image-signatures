@@ -14,7 +14,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 anyhow = "1.0"
-k8s-openapi = { version = "0.21.1", default_features = false, features = [
+k8s-openapi = { version = "0.22.0", default_features = false, features = [
   "v1_27",
 ] }
 kubewarden-policy-sdk = "0.10.0"
