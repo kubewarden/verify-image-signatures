@@ -338,9 +338,9 @@ dependencies = [
 
 [[package]]
 name = "kubewarden-policy-sdk"
-version = "0.10.1"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "daff4e5ae782161ae99181f8a93507540c48d4d74cd10929052d0bc4a622543d"
+checksum = "a781889d9edf4575b0efb187cf16158973af14ff31b460a8abeeb593c815f817"
 dependencies = [
  "anyhow",
  "cfg-if",
@@ -360,9 +360,9 @@ dependencies = [
 
 [[package]]
 name = "lazy_static"
-version = "1.4.0"
+version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
+checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 
 [[package]]
 name = "libc"
