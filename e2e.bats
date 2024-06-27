@@ -178,6 +178,10 @@
 }
 
 @test "Certificate verification with Rekor enabled" {
+  # This is a test that verifies an image that was signed with the
+  # key associated with a certificate. The signature was then registered
+  # inside of Rekor's transparency log.
+  #
   # Need to run the command inside of `bash -c` because of a bats
   # limitation: https://bats-core.readthedocs.io/en/stable/gotchas.html?highlight=pipe#my-piped-command-does-not-work-under-run
 
