@@ -7,6 +7,19 @@ ca.pem: ca.json
 	@tput sgr0
 	cfssl gencert -initca ca.json | cfssljson -bare ca
 
+.PHONY: sunlight
+sunlight: sunlight.pem
+
+sunlight.pem: sunlight.json ca.pem cfssl.json
+	@tput setaf 1
+	@echo Generate sunlight certificate
+	@tput sgr0
+	cfssl gencert -ca ca.pem \
+		-ca-key ca-key.pem \
+		-config cfssl.json \
+		-profile=sunlight sunlight.json \
+		| cfssljson -bare sunlight
+
 .PHONY: intermediate-ca
 intermediate-ca: intermediate_ca.pem
 
@@ -33,6 +46,19 @@ user-1-sigstore-key.pem: intermediate_ca.pem user-1.json cfssl.json
 		-config cfssl.json \
 		-profile=sigstore user-1.json \
 		| cfssljson -bare user-1-sigstore
+
+.PHONY: user-ctl
+user-ctl: user-ctl-sigstore-key.pem
+
+user-ctl-sigstore-key.pem: intermediate_ca.pem user-1.json cfssl.json
+	@tput setaf 1
+	@echo Generate user certificate with certificate transparency log signed by local instance of sunlight
+	@tput sgr0
+	cfssl gencert -ca intermediate_ca.pem \
+		-ca-key intermediate_ca-key.pem \
+		-config cfssl.json \
+		-profile=sigstore-with-sunlight user-1.json \
+		| cfssljson -bare user-ctl-sigstore
 
 .PHONY: cosign-import
 cosign-import: import-cosign.key
@@ -104,6 +130,8 @@ verify: bundle.pem
 clean:
 	rm -f ca.csr ca-key.pem ca.pem
 	rm -f intermediate_ca.csr intermediate_ca-key.pem intermediate_ca.pem
+	rm -f sunlight.csr sunlight-key.pem sunlight.pem
 	rm -f user-1-sigstore.csr user-1-sigstore-key.pem user-1-sigstore.pem
+	rm -f user-ctl-sigstore.csr user-ctl-sigstore-key.pem user-ctl-sigstore.pem
 	rm -f import-cosign.key import-cosign.pub
 	rm -f bundle.pem

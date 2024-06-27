@@ -13,9 +13,9 @@ following scenario:
 
 The following binaries must be available on the system:
 
-* `make`
-* `cfssl` and `cfssljson`: both can be be downloaded from [here](https://github.com/cloudflare/cfssl/releases)
-* `cosign`
+- `make`
+- `cfssl` and `cfssljson`: both can be be downloaded from [here](https://github.com/cloudflare/cfssl/releases)
+- `cosign`
 
 ## Creating all the certificates
 
@@ -105,3 +105,69 @@ IMAGE=registry-testing.svc.lan/kubewarden/pod-privileged:v0.1.9 make verify
 ```
 
 You can see the actual `cosign` commands being printed on the standard output.
+
+## Create user certificate using a local Certificate Transparency log
+
+This is really complex and most users will never do that. However, this can be accomplished
+by running a local instance of [sunlight](https://github.com/FiloSottile/sunlight) to create
+a local Certificate Transparency log.
+
+First of all, create the certificate used by sunlight:
+
+```console
+make sunlight
+```
+
+This certificate is going to be signed by the root CA.
+
+Then create the bundle:
+
+```console
+make bundle
+```
+
+Create a directory where all the sunlight data is going to be stored:
+
+```console
+mkdir ~/sunlight-data
+cp bundle.pem ~/sunlight-data/chain.pem
+cp -v sunlight*.pem ~/sunlight-data
+```
+
+Create a configuration file for sunlight undeer `~/sunlight-data/sunlight.yaml`:
+
+```yaml
+listen: ":8080"
+
+checkpoints: checkpoints.db
+
+logs:
+  - name: sunlight.127.0.0.1.sslip.io/2024h1
+    shortname: bergamo2024h1
+    # the day the sunlight process is started
+    inception: 2024-06-26
+    httpprefix: /2024h1
+    roots: ./chain.pem
+    key: ./key.pem
+    cache: bergamo2024h1.db
+    poolsize: 750
+    # change these dates accordingly
+    notafterstart: 2024-06-26T00:00:00Z
+    notafterlimit: 2024-07-01T00:00:00Z
+```
+
+Finally, run sunlight:
+
+```console
+cd ~/sunlight-data
+sqlite3 checkpoints.db "CREATE TABLE checkpoints (logID BLOB PRIMARY KEY, body TEXT)"
+sunlight -testcert
+```
+
+Ensure the root CA is trusted by the system, how to do that depends on the operating system.
+
+Then create the user certificate:
+
+```console
+make user-ctl
+```

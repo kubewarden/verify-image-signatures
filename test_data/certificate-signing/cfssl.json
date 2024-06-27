@@ -6,23 +6,53 @@
     "profiles": {
       "intermediate_ca": {
         "usages": [
-            "cert sign",
-            "crl sign",
-            "code signing"
+          "client auth",
+          "cert sign",
+          "crl sign",
+          "code signing"
         ],
         "expiry": "8760h",
         "ca_constraint": {
-            "is_ca": true,
-            "max_path_len": 0, 
-            "max_path_len_zero": true
-        }
+          "is_ca": true,
+          "max_path_len": 0,
+          "max_path_len_zero": true
+        },
+        "copy_extensions": true
       },
       "sigstore": {
         "usages": [
+          "client auth",
           "digital signature",
-          "code signing"
+          "code signing",
+          "server auth"
+        ],
+        "expiry": "24h",
+        "copy_extensions": true
+      },
+      "sunlight": {
+        "usages": [
+          "cert sign",
+          "client auth",
+          "code signing",
+          "crl sign",
+          "key encipherment",
+          "server auth",
+          "signing"
         ],
         "expiry": "8760h"
+      },
+      "sigstore-with-sunlight": {
+        "usages": [
+          "client auth",
+          "digital signature",
+          "code signing",
+          "server auth"
+        ],
+        "ct_log_servers": [
+          "https://sunlight.127.0.0.1.sslip.io:8080/2024h1"
+        ],
+        "expiry": "24h",
+        "copy_extensions": true
       }
     }
   }
