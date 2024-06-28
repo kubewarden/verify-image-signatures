@@ -1,0 +1,6 @@
+modifyImagesWithDigest: true
+signatures:
+  - image: "ghcr.io/kubewarden/tests/pod-privileged:v0.2.1"
+    keyless:
+      - issuer: "https://github.com/login/oauth"
+        subject: "flavio@castelli.me"

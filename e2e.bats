@@ -178,6 +178,10 @@
 }
 
 @test "Certificate verification with Rekor enabled" {
+  # This is a test that verifies an image that was signed with the
+  # key associated with a certificate. The signature was then registered
+  # inside of Rekor's transparency log.
+  #
   # Need to run the command inside of `bash -c` because of a bats
   # limitation: https://bats-core.readthedocs.io/en/stable/gotchas.html?highlight=pipe#my-piped-command-does-not-work-under-run
 
@@ -205,5 +209,36 @@
   [ "$status" -eq 1 ]
   [ $(expr "$output" : '.*Provided settings are not valid.*') -ne 0 ]
   [ $(expr "$output" : '.*Certificate not trusted: Certificate is not trusted by the provided cert chain.*') -ne 0 ]
+}
+
+@test "Keyless verification" {
+  # Need to run the command inside of `bash -c` because of a bats
+  # limitation: https://bats-core.readthedocs.io/en/stable/gotchas.html?highlight=pipe#my-piped-command-does-not-work-under-run
+
+  run bash -c 'kwctl run \
+    --request-path test_data/pod_creation_signed_with_keyless_mode.json \
+    --settings-path test_data/settings-keyless-signing.yaml \
+    annotated-policy.wasm | jq -r ".patch | @base64d"'
+
+  # this prints the output when one the checks below fails
+  echo "output = ${output}"
+
+  [ "$status" -eq 0 ]
+  [ $(expr "$output" : '.*ghcr.io/kubewarden/tests/pod-privileged:v0.2.1@sha256:db48aecd83c2826eba154a84c4fbabe0977f96b3360b4c6098578eae5c2d2882.*') -ne 0 ]
+}
+
+@test "Keyless verification with wrong subject" {
+  run kwctl run \
+    --request-path test_data/pod_creation_signed_with_keyless_mode.json \
+    --settings-path test_data/settings-keyless-signing-wrong-subject.yaml \
+    annotated-policy.wasm
+
+  # this prints the output when one the checks below fails
+  echo "output = ${output}"
+
+  [ "$status" -eq 0 ]
+  [ $(expr "$output" : '.*"allowed":false.*') -ne 0 ]
+  [ $(expr "$output" : '.*is not accepted.*subject: !equal kubewarden@cncf.io.*') -ne 0 ]
+  [ $(expr "$output" : '.*subject: !equal kubewarden@cncf.io.*') -ne 0 ]
 }
 

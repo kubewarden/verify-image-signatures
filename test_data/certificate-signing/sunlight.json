@@ -1,0 +1,18 @@
+{
+  "CN": "sunlight.127.0.0.1.sslip.io",
+  "key": {
+    "algo": "ecdsa"
+  },
+  "names": [
+    {
+      "C": "DE",
+      "L": "Nuremberg",
+      "O": "Kubewarden",
+      "ST": "Bavaria",
+      "OU": "sunlight"
+    }
+  ],
+  "hosts": [
+    "sunlight.127.0.0.1.sslip.io"
+  ]
+}

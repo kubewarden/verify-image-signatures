@@ -23,11 +23,11 @@ kind: ClusterAdmissionPolicy
 metadata:
   name: verify-image-signatures
 spec:
-  module: ghcr.io/kubewarden/policies/verify-image-signatures:v0.1.7
+  module: ghcr.io/kubewarden/policies/verify-image-signatures:v0.2.9
   rules:
     - apiGroups: [""]
       apiVersions: ["v1"]
-      resources: [ "pods" ]
+      resources: ["pods"]
       operations: ["CREATE", "UPDATE"]
     - apiGroups: [""]
       apiVersions: ["v1"]
