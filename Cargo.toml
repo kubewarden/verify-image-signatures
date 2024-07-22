@@ -27,6 +27,6 @@ validator = { version = "0.18", features = ["derive"] }
 wildmatch = "2.3.3"
 
 [dev-dependencies]
-mockall = "0.12"
+mockall = "0.13"
 rstest = "0.21.0"
 serial_test = "3.1.1"
