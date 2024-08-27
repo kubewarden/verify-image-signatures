@@ -1,5 +1,7 @@
 #!/usr/bin/env bats
 
+echo "This is to trigger CI"
+
 @test "Accept a valid signature" {
   run kwctl run  --request-path test_data/pod_creation_signed.json --settings-path test_data/settings-mutation-enabled.yaml annotated-policy.wasm
 
