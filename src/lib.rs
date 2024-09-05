@@ -1,12 +1,12 @@
-use lazy_static::lazy_static;
-
 use guest::prelude::*;
+use k8s_openapi::api::{
+    apps::v1::{DaemonSet, Deployment, ReplicaSet, StatefulSet},
+    batch::v1::{CronJob, Job},
+    core::v1::{Container, EphemeralContainer, Pod, PodSpec, ReplicationController},
+};
 use kubewarden_policy_sdk::wapc_guest as guest;
-
-use k8s_openapi::api::apps::v1::{DaemonSet, Deployment, ReplicaSet, StatefulSet};
-use k8s_openapi::api::batch::v1::{CronJob, Job};
-use k8s_openapi::api::core::v1 as apicore;
-use k8s_openapi::api::core::v1::{Container, EphemeralContainer, PodSpec, ReplicationController};
+use lazy_static::lazy_static;
+use serde::Serialize;
 
 extern crate kubewarden_policy_sdk as kubewarden;
 #[cfg(test)]
@@ -34,7 +34,7 @@ use wildmatch::WildMatch;
 lazy_static! {
     static ref LOG_DRAIN: Logger = Logger::root(
         logging::KubewardenDrain::new(),
-        o!("policy" => "sample-policy")
+        o!("policy" => "verify-image-signatures")
     );
 }
 
@@ -45,8 +45,8 @@ pub extern "C" fn wapc_init() {
     register_function("protocol_version", protocol_version_guest);
 }
 
-// Represents an abstraction of an struct that contains an image
-// Used to reuse code for Container and EphemeralContainer
+/// Represents an abstraction of an struct that contains an image
+/// Used to reuse code for Container and EphemeralContainer
 trait ImageHolder: Clone {
     fn set_image(&mut self, image: Option<String>);
     fn get_image(&self) -> Option<String>;
@@ -76,6 +76,21 @@ impl ImageHolder for EphemeralContainer {
 trait ValidatingResource {
     fn name(&self) -> String;
     fn spec(&self) -> Option<PodSpec>;
+    fn set_spec(&mut self, spec: PodSpec);
+}
+
+impl ValidatingResource for Pod {
+    fn name(&self) -> String {
+        self.metadata.name.clone().unwrap_or_default()
+    }
+
+    fn spec(&self) -> Option<PodSpec> {
+        self.spec.clone()
+    }
+
+    fn set_spec(&mut self, spec: PodSpec) {
+        self.spec = Some(spec);
+    }
 }
 
 impl ValidatingResource for Deployment {
@@ -85,6 +100,10 @@ impl ValidatingResource for Deployment {
 
     fn spec(&self) -> Option<PodSpec> {
         self.spec.as_ref()?.template.spec.clone()
+    }
+
+    fn set_spec(&mut self, spec: PodSpec) {
+        self.spec.as_mut().unwrap().template.spec = Some(spec);
     }
 }
 
@@ -96,6 +115,10 @@ impl ValidatingResource for ReplicaSet {
     fn spec(&self) -> Option<PodSpec> {
         self.spec.as_ref()?.template.as_ref()?.spec.clone()
     }
+
+    fn set_spec(&mut self, spec: PodSpec) {
+        self.spec.as_mut().unwrap().template.as_mut().unwrap().spec = Some(spec);
+    }
 }
 
 impl ValidatingResource for StatefulSet {
@@ -105,6 +128,10 @@ impl ValidatingResource for StatefulSet {
 
     fn spec(&self) -> Option<PodSpec> {
         self.spec.as_ref()?.template.spec.clone()
+    }
+
+    fn set_spec(&mut self, spec: PodSpec) {
+        self.spec.as_mut().unwrap().template.spec = Some(spec);
     }
 }
 
@@ -116,6 +143,10 @@ impl ValidatingResource for DaemonSet {
     fn spec(&self) -> Option<PodSpec> {
         self.spec.as_ref()?.template.spec.clone()
     }
+
+    fn set_spec(&mut self, spec: PodSpec) {
+        self.spec.as_mut().unwrap().template.spec = Some(spec);
+    }
 }
 
 impl ValidatingResource for ReplicationController {
@@ -126,6 +157,10 @@ impl ValidatingResource for ReplicationController {
     fn spec(&self) -> Option<PodSpec> {
         self.spec.as_ref()?.template.as_ref()?.spec.clone()
     }
+
+    fn set_spec(&mut self, spec: PodSpec) {
+        self.spec.as_mut().unwrap().template.as_mut().unwrap().spec = Some(spec);
+    }
 }
 
 impl ValidatingResource for Job {
@@ -135,6 +170,10 @@ impl ValidatingResource for Job {
 
     fn spec(&self) -> Option<PodSpec> {
         self.spec.as_ref()?.template.spec.clone()
+    }
+
+    fn set_spec(&mut self, spec: PodSpec) {
+        self.spec.as_mut().unwrap().template.spec = Some(spec);
     }
 }
 
@@ -153,6 +192,18 @@ impl ValidatingResource for CronJob {
             .spec
             .clone()
     }
+
+    fn set_spec(&mut self, spec: PodSpec) {
+        self.spec
+            .as_mut()
+            .unwrap()
+            .job_template
+            .spec
+            .as_mut()
+            .unwrap()
+            .template
+            .spec = Some(spec);
+    }
 }
 
 fn validate(payload: &[u8]) -> CallResult {
@@ -166,50 +217,7 @@ fn validate(payload: &[u8]) -> CallResult {
         "ReplicationController" => validate_resource::<ReplicationController>(validation_request),
         "Job" => validate_resource::<Job>(validation_request),
         "CronJob" => validate_resource::<CronJob>(validation_request),
-        "Pod" => {
-            match serde_json::from_value::<apicore::Pod>(validation_request.request.object.clone())
-            {
-                Ok(mut pod) => {
-                    if let Some(spec) = pod.spec {
-                        match verify_all_images_in_pod(
-                            &spec,
-                            &validation_request.settings.signatures,
-                        ) {
-                            Ok(spec_with_digest) => {
-                                if validation_request.settings.modify_images_with_digest
-                                    && spec_with_digest.is_some()
-                                {
-                                    pod.spec = spec_with_digest;
-                                    let mutated_object = serde_json::to_value(&pod)?;
-                                    return kubewarden::mutate_request(mutated_object);
-                                } else {
-                                    return kubewarden::accept_request();
-                                }
-                            }
-                            Err(error) => {
-                                return kubewarden::reject_request(
-                                    Some(format!(
-                                        "Pod {} is not accepted: {}",
-                                        &pod.metadata.name.unwrap_or_default(),
-                                        error
-                                    )),
-                                    None,
-                                    None,
-                                    None,
-                                );
-                            }
-                        }
-                    }
-                    kubewarden::accept_request()
-                }
-                Err(_) => {
-                    // We were forwarded a request we cannot unmarshal or
-                    // understand, just accept it
-                    warn!(LOG_DRAIN, "cannot unmarshal resource: this policy does not know how to evaluate this resource; accept it");
-                    kubewarden::accept_request()
-                }
-            }
-        }
+        "Pod" => validate_resource::<Pod>(validation_request),
         _ => {
             // We were forwarded a request we cannot unmarshal or
             // understand, just accept it
@@ -220,43 +228,61 @@ fn validate(payload: &[u8]) -> CallResult {
 }
 
 // validate any resource that contains a Pod. e.g. Deployment, StatefulSet, ...
-// it does not modify the container with the manifest digest. Mutation just happens at the Pod level
-fn validate_resource<T: ValidatingResource + DeserializeOwned>(
+// it does not modify the container with the manifest digest.
+fn validate_resource<T: ValidatingResource + DeserializeOwned + Serialize>(
     validation_request: ValidationRequest<Settings>,
 ) -> CallResult {
-    match serde_json::from_value::<T>(validation_request.request.object.clone()) {
-        Ok(resource) => {
-            if let Some(spec) = resource.spec() {
-                match verify_all_images_in_pod(&spec, &validation_request.settings.signatures) {
-                    Ok(_) => {
-                        return kubewarden::accept_request();
-                    }
-                    Err(error) => {
-                        return kubewarden::reject_request(
-                            Some(format!(
-                                "Resource {} is not accepted: {}",
-                                &resource.name(),
-                                error
-                            )),
-                            None,
-                            None,
-                            None,
-                        );
-                    }
-                }
-            }
-            kubewarden::accept_request()
-        }
+    let resource = match serde_json::from_value::<T>(validation_request.request.object.clone()) {
+        Ok(resource) => resource,
         Err(_) => {
             // We were forwarded a request we cannot unmarshal or
             // understand, just accept it
             warn!(LOG_DRAIN, "cannot unmarshal resource: this policy does not know how to evaluate this resource; accept it");
-            kubewarden::accept_request()
+            return kubewarden::accept_request();
         }
+    };
+
+    let spec = match resource.spec() {
+        Some(spec) => spec,
+        None => {
+            return kubewarden::accept_request();
+        }
+    };
+
+    let changed_spec =
+        match verify_all_images_in_pod(&spec, &validation_request.settings.signatures) {
+            Ok(spec) => match spec {
+                Some(spec) => spec,
+                None => {
+                    return kubewarden::accept_request();
+                }
+            },
+            Err(error) => {
+                return kubewarden::reject_request(
+                    Some(format!(
+                        "Resource {} is not accepted: {}",
+                        &resource.name(),
+                        error
+                    )),
+                    None,
+                    None,
+                    None,
+                );
+            }
+        };
+
+    if !validation_request.settings.modify_images_with_digest {
+        return kubewarden::accept_request();
     }
+
+    let mut resource = resource;
+    resource.set_spec(changed_spec);
+
+    let mutated_object = serde_json::to_value(&resource)?;
+    kubewarden::mutate_request(mutated_object)
 }
 
-// verify all images and return a PodSpec with the images replaced with the digest which was used for the verification
+/// verify all images and return a PodSpec with the images replaced with the digest which was used for the verification
 fn verify_all_images_in_pod(
     spec: &PodSpec,
     signatures: &[Signature],
@@ -318,98 +344,68 @@ where
         let container_image = container.get_image().unwrap();
 
         for signature in signatures.iter() {
-            match signature {
-                Signature::PubKeys(s) => {
-                    // verify if the name matches the image name provided
-                    if WildMatch::new(s.image.as_str()).matches(container_image.as_str()) {
-                        handle_verification_response(
-                            verify_pub_keys_image(
-                                container_image.as_str(),
-                                s.pub_keys.clone(),
-                                s.annotations.clone(),
-                            ),
-                            container_image.as_str(),
-                            &mut container_with_images_digests[i],
-                            policy_verification_errors,
-                        );
-                    }
-                }
-                Signature::Keyless(s) => {
-                    // verify if the name matches the image name provided
-                    if WildMatch::new(s.image.as_str()).matches(container_image.as_str()) {
-                        handle_verification_response(
-                            verify_keyless_exact_match(
-                                container_image.as_str(),
-                                s.keyless.clone(),
-                                s.annotations.clone(),
-                            ),
-                            container_image.as_str(),
-                            &mut container_with_images_digests[i],
-                            policy_verification_errors,
-                        );
-                    }
-                }
-                Signature::KeylessPrefix(s) => {
-                    // verify if the name matches the image name provided
-                    if WildMatch::new(s.image.as_str()).matches(container_image.as_str()) {
-                        handle_verification_response(
-                            verify_keyless_prefix_match(
-                                container_image.as_str(),
-                                s.keyless_prefix.clone(),
-                                s.annotations.clone(),
-                            ),
-                            container_image.as_str(),
-                            &mut container_with_images_digests[i],
-                            policy_verification_errors,
-                        );
-                    }
-                }
-                Signature::GithubActions(s) => {
-                    // verify if the name matches the image name provided
-                    if WildMatch::new(s.image.as_str()).matches(container_image.as_str()) {
-                        handle_verification_response(
-                            verify_keyless_github_actions(
-                                container_image.as_str(),
-                                s.github_actions.owner.clone(),
-                                s.github_actions.repo.clone(),
-                                s.annotations.clone(),
-                            ),
-                            container_image.as_str(),
-                            &mut container_with_images_digests[i],
-                            policy_verification_errors,
-                        );
-                    }
-                }
-                Signature::Certificate(s) => {
-                    // verify if the name matches the image name provided
-                    if WildMatch::new(s.image.as_str()).matches(container_image.as_str()) {
-                        let mut response: Result<VerificationResponse> =
-                            Err(anyhow::anyhow!("Cannot verify"));
-
-                        for certificate in &s.certificates {
-                            response = verify_certificate(
-                                container_image.as_str(),
-                                certificate.clone(),
-                                s.certificate_chain.clone(),
-                                s.require_rekor_bundle,
-                                s.annotations.clone(),
-                            );
-                            // All the certificates must be verified. As soon as one of
-                            // them cannot be used to verify the image -> break from the
-                            // loop and propagate the verification failure
-                            if response.is_err() {
-                                break;
-                            }
-                        }
-                        handle_verification_response(
-                            response,
-                            container_image.as_str(),
-                            &mut container_with_images_digests[i],
-                            policy_verification_errors,
-                        )
-                    }
-                }
+            // verify if the name matches the image name provided
+            if !WildMatch::new(signature.image()).matches(container_image.as_str()) {
+                continue;
             }
+
+            let verification_response = match signature {
+                Signature::PubKeys(s) => verify_pub_keys_image(
+                    container_image.as_str(),
+                    s.pub_keys.clone(),
+                    s.annotations.clone(),
+                ),
+                Signature::Keyless(s) => verify_keyless_exact_match(
+                    container_image.as_str(),
+                    s.keyless.clone(),
+                    s.annotations.clone(),
+                ),
+                Signature::KeylessPrefix(s) => verify_keyless_prefix_match(
+                    container_image.as_str(),
+                    s.keyless_prefix.clone(),
+                    s.annotations.clone(),
+                ),
+                Signature::GithubActions(s) => verify_keyless_github_actions(
+                    container_image.as_str(),
+                    s.github_actions.owner.clone(),
+                    s.github_actions.repo.clone(),
+                    s.annotations.clone(),
+                ),
+                Signature::Certificate(s) => {
+                    let mut response: Result<VerificationResponse> =
+                        Err(anyhow::anyhow!("Cannot verify"));
+
+                    for (index, certificate) in s.certificates.iter().enumerate() {
+                        response = verify_certificate(
+                            container_image.as_str(),
+                            certificate.clone(),
+                            s.certificate_chain.clone(),
+                            s.require_rekor_bundle,
+                            s.annotations.clone(),
+                        );
+                        // All the certificates must be verified. As soon as one of
+                        // them cannot be used to verify the image -> break from the
+                        // loop and propagate the verification failure
+                        if response.is_err() {
+                            warn!(
+                                LOG_DRAIN,
+                                "certificate image verification failed";
+                                "image" => container_image.clone(),
+                                "certificate-index" => index,
+                            );
+                            break;
+                        }
+                    }
+                    response
+                }
+            };
+
+            handle_verification_response(
+                verification_response,
+                container_image.as_str(),
+                &mut container_with_images_digests[i],
+                policy_verification_errors,
+            );
         }
     }
 
@@ -465,11 +461,14 @@ mod tests {
         KeylessPrefix, PubKeys,
     };
     use anyhow::anyhow;
-    use kubewarden::host_capabilities::verification::{
-        KeylessInfo, KeylessPrefixInfo, VerificationResponse,
+    use kubewarden::{
+        host_capabilities::verification::{KeylessInfo, KeylessPrefixInfo, VerificationResponse},
+        request::{GroupVersionKind, KubernetesAdmissionRequest},
+        response::ValidationResponse,
+        test::Testcase,
     };
-    use kubewarden::test::Testcase;
     use mockall::automock;
+    use rstest::*;
     use serde_json::json;
     use serial_test::serial;
 
@@ -565,38 +564,16 @@ mod tests {
         }
     }
 
-    // these tests need to run sequentially because mockall creates a global context to create the mocks
-    #[test]
-    #[serial]
-    fn pub_keys_validation_pass_with_mutation() {
-        let ctx = mock_verification_sdk::verify_pub_keys_image_context();
-        ctx.expect().times(1).returning(|_, _, _| {
-            Ok(VerificationResponse {
-                is_trusted: true,
-                digest: "sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e"
-                    .to_string(),
-            })
-        });
+    fn image_url(has_digest: bool) -> &'static str {
+        if has_digest {
+            "ghcr.io/kubewarden/test-verify-image-signatures:signed@sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e"
+        } else {
+            "ghcr.io/kubewarden/test-verify-image-signatures:signed"
+        }
+    }
 
-        let settings: Settings = Settings {
-            signatures: vec![Signature::PubKeys(PubKeys {
-                image: "ghcr.io/kubewarden/test-verify-image-signatures:*".to_string(),
-                pub_keys: vec!["key".to_string()],
-                annotations: None,
-            })],
-            modify_images_with_digest: true,
-        };
-
-        let tc = Testcase {
-            name: String::from("It should successfully validate the ghcr.io/kubewarden/test-verify-image-signatures container"),
-            fixture_file: String::from("test_data/pod_creation_signed.json"),
-            settings,
-            expected_validation_result: true,
-        };
-
-        let response = tc.eval(validate).unwrap();
-        assert_eq!(response.accepted, true);
-        let expected_mutation: serde_json::Value = json!(
+    fn pod(has_digest: bool) -> serde_json::Value {
+        json!(
         {
           "apiVersion": "v1",
           "kind": "Pod",
@@ -606,20 +583,222 @@ mod tests {
           "spec": {
             "containers": [
               {
-                "image": "ghcr.io/kubewarden/test-verify-image-signatures:signed@sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e",
+                "image": image_url(has_digest),
                 "name": "test-verify-image-signatures"
               }
             ]
           }
-        });
-        assert_eq!(response.mutated_object.unwrap(), expected_mutation);
+        })
     }
 
-    #[test]
-    #[serial]
-    fn pub_keys_validation_pass_with_no_mutation() {
+    fn deployment(has_digest: bool) -> serde_json::Value {
+        json!({
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {
+                "name": "nginx-deployment"
+            },
+            "spec": {
+                "replicas": 3,
+                "selector": {
+                    "matchLabels": {
+                        "app": "nginx"
+                    }
+                },
+                "template": {
+                    "metadata": {
+                        "labels": {
+                            "app": "nginx"
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "image": image_url(has_digest),
+                                "name": "test-verify-image-signatures"
+                            }
+                        ]
+                    }
+                }
+            }
+        })
+    }
+
+    fn replica_set(has_digest: bool) -> serde_json::Value {
+        json!(
+        {
+          "apiVersion": "apps/v1",
+          "kind": "ReplicaSet",
+          "metadata": {
+            "name": "nginx"
+          },
+          "spec": {
+            "replicas": 3,
+            "selector": {
+              "matchLabels": {
+                "app": "nginx"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "nginx"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "image": image_url(has_digest),
+                    "name": "test-verify-image-signatures"
+                  }
+                ]
+              }
+            }
+          }
+        })
+    }
+
+    fn daemon_set(has_digest: bool) -> serde_json::Value {
+        json!(
+        {
+          "apiVersion": "apps/v1",
+          "kind": "DaemonSet",
+          "metadata": {
+            "name": "nginx"
+          },
+          "spec": {
+            "selector": {
+              "matchLabels": {
+                "app": "nginx"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "nginx"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "image": image_url(has_digest),
+                    "name": "test-verify-image-signatures"
+                  }
+                ]
+              }
+            }
+          }
+        })
+    }
+
+    fn replication_controller(has_digest: bool) -> serde_json::Value {
+        json!(
+        {
+          "apiVersion": "v1",
+          "kind": "ReplicationController",
+          "metadata": {
+            "name": "nginx"
+          },
+          "spec": {
+            "replicas": 3,
+            "selector": {
+              "app": "nginx"
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "nginx"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "image": image_url(has_digest),
+                    "name": "test-verify-image-signatures"
+                  }
+                ]
+              }
+            }
+          }
+        })
+    }
+
+    fn job(has_digest: bool) -> serde_json::Value {
+        json!(
+        {
+          "apiVersion": "batch/v1",
+          "kind": "Job",
+          "metadata": {
+            "name": "nginx"
+          },
+          "spec": {
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "nginx"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "image": image_url(has_digest),
+                    "name": "test-verify-image-signatures"
+                  }
+                ],
+                "restartPolicy": "Never"
+              }
+            }
+          }
+        })
+    }
+
+    fn cron_job(has_digest: bool) -> serde_json::Value {
+        json!(
+        {
+          "apiVersion": "batch/v1",
+          "kind": "CronJob",
+          "metadata": {
+            "name": "nginx"
+          },
+          "spec": {
+            "schedule": "*/1 * * * *",
+            "jobTemplate": {
+              "spec": {
+                "template": {
+                  "metadata": {
+                    "labels": {
+                      "app": "nginx"
+                    }
+                  },
+                  "spec": {
+                    "containers": [
+                      {
+                        "image": image_url(has_digest),
+                        "name": "test-verify-image-signatures"
+                      }
+                    ],
+                    "restartPolicy": "OnFailure"
+                  }
+                }
+              }
+            }
+          }
+        })
+    }
+
+    // these tests need to run sequentially because mockall creates a global context to create the mocks
+    #[rstest]
+    #[case::pod(pod(false), pod(true))]
+    #[case::deployment(deployment(false), deployment(true))]
+    #[case::replica_set(replica_set(false), replica_set(true))]
+    #[case::daemon_set(daemon_set(false), daemon_set(true))]
+    #[case::replication_controller(replication_controller(false), replication_controller(true))]
+    #[case::job(job(false), job(true))]
+    #[case::cron_job(cron_job(false), cron_job(true))]
+    #[serial] // these tests need to run sequentially because mockall creates a global context to create the mocks
+    fn mutation(#[case] resource: serde_json::Value, #[case] expected_mutation: serde_json::Value) {
         let ctx = mock_verification_sdk::verify_pub_keys_image_context();
-        ctx.expect().times(1).returning(|_, _, _| {
+        ctx.expect().times(2).returning(|_, _, _| {
             Ok(VerificationResponse {
                 is_trusted: true,
                 digest: "sha256:89102e348749bb17a6a651a4b2a17420e1a66d2a44a675b981973d49a5af3a5e"
@@ -627,25 +806,40 @@ mod tests {
             })
         });
 
-        let settings: Settings = Settings {
-            signatures: vec![Signature::PubKeys(PubKeys {
-                image: "ghcr.io/kubewarden/test-verify-image-signatures:*".to_string(),
-                pub_keys: vec!["key".to_string()],
-                annotations: None,
-            })],
-            modify_images_with_digest: false,
-        };
+        for allow_mutation in [true, false] {
+            let resource = resource.clone();
 
-        let tc = Testcase {
-            name: String::from("It should successfully validate the ghcr.io/kubewarden/test-verify-image-signatures container"),
-            fixture_file: String::from("test_data/pod_creation_signed.json"),
-            settings,
-            expected_validation_result: true,
-        };
+            let settings: Settings = Settings {
+                signatures: vec![Signature::PubKeys(PubKeys {
+                    image: "ghcr.io/kubewarden/test-verify-image-signatures:*".to_string(),
+                    pub_keys: vec!["key".to_string()],
+                    annotations: None,
+                })],
+                modify_images_with_digest: allow_mutation,
+            };
 
-        let response = tc.eval(validate).unwrap();
-        assert_eq!(response.accepted, true);
-        assert!(response.mutated_object.is_none());
+            let request = ValidationRequest {
+                request: KubernetesAdmissionRequest {
+                    kind: GroupVersionKind {
+                        kind: resource["kind"].as_str().unwrap().to_string(),
+                        ..Default::default()
+                    },
+                    object: resource,
+                    ..Default::default()
+                },
+                settings,
+            };
+
+            let response = validate(serde_json::to_vec(&request).unwrap().as_slice()).unwrap();
+            let response: ValidationResponse = serde_json::from_slice(&response).unwrap();
+            assert!(response.accepted);
+
+            if allow_mutation {
+                assert_eq!(response.mutated_object.unwrap(), expected_mutation);
+            } else {
+                assert!(response.mutated_object.is_none());
+            }
+        }
     }
 
     #[test]
@@ -673,7 +867,7 @@ mod tests {
         };
 
         let response = tc.eval(validate).unwrap();
-        assert_eq!(response.accepted, false);
+        assert!(!response.accepted);
         assert!(response.mutated_object.is_none());
     }
 
@@ -709,7 +903,7 @@ mod tests {
         };
 
         let response = tc.eval(validate).unwrap();
-        assert_eq!(response.accepted, true);
+        assert!(response.accepted);
         let expected_mutation: serde_json::Value = json!(
         {
           "apiVersion": "v1",
@@ -754,7 +948,7 @@ mod tests {
         };
 
         let response = tc.eval(validate).unwrap();
-        assert_eq!(response.accepted, false)
+        assert!(!response.accepted)
     }
 
     #[test]
@@ -792,7 +986,7 @@ mod tests {
         };
 
         let response = tc.eval(validate).unwrap();
-        assert_eq!(response.accepted, true);
+        assert!(response.accepted);
         assert!(response.mutated_object.is_none());
     }
 
@@ -831,7 +1025,7 @@ mod tests {
         };
 
         let response = tc.eval(validate).unwrap();
-        assert_eq!(response.accepted, true);
+        assert!(response.accepted);
         assert!(response.mutated_object.is_none());
     }
 
@@ -871,7 +1065,7 @@ mod tests {
         };
 
         let response = tc.eval(validate).unwrap();
-        assert_eq!(response.accepted, false);
+        assert!(!response.accepted);
         assert!(response.mutated_object.is_none());
     }
 
@@ -912,7 +1106,7 @@ mod tests {
         };
 
         let response = tc.eval(validate).unwrap();
-        assert_eq!(response.accepted, true);
+        assert!(response.accepted);
         assert!(response.mutated_object.is_none());
     }
 
@@ -961,7 +1155,7 @@ mod tests {
         };
 
         let response = tc.eval(validate).unwrap();
-        assert_eq!(response.accepted, false);
+        assert!(!response.accepted);
         assert!(response.mutated_object.is_none());
     }
 
@@ -1013,7 +1207,7 @@ mod tests {
         };
 
         let response = tc.eval(validate).unwrap();
-        assert_eq!(response.accepted, true);
+        assert!(response.accepted);
 
         let expected: serde_json::Value = json!(
                     {
@@ -1073,7 +1267,7 @@ mod tests {
         };
 
         let response = tc.eval(validate).unwrap();
-        assert_eq!(response.accepted, true);
+        assert!(response.accepted);
         assert!(response.mutated_object.is_none())
     }
 
@@ -1109,7 +1303,7 @@ mod tests {
         };
 
         let response = tc.eval(validate).unwrap();
-        assert_eq!(response.accepted, true);
+        assert!(response.accepted);
         assert!(response.mutated_object.is_none())
     }
 
@@ -1145,7 +1339,7 @@ mod tests {
         };
 
         let response = tc.eval(validate).unwrap();
-        assert_eq!(response.accepted, true);
+        assert!(response.accepted);
         assert!(response.mutated_object.is_none())
     }
 
@@ -1178,7 +1372,7 @@ mod tests {
         };
 
         let response = tc.eval(validate).unwrap();
-        assert_eq!(response.accepted, true);
+        assert!(response.accepted);
         assert!(response.mutated_object.is_none())
     }
 
@@ -1208,7 +1402,7 @@ mod tests {
         };
 
         let response = tc.eval(validate).unwrap();
-        assert_eq!(response.accepted, false);
+        assert!(!response.accepted);
         assert!(response.mutated_object.is_none())
     }
 
