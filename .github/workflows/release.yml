@@ -1,14 +1,13 @@
 on:
   push:
     branches:
-    - main
+      - main
     tags:
-    - 'v*'
+      - "v*"
 
 name: Release policy
 
 jobs:
-
   test:
     name: run tests and linters
     uses: kubewarden/github-actions/.github/workflows/reusable-test-policy-rust.yml@v3.3.4

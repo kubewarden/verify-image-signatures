@@ -60,6 +60,16 @@ impl fmt::Display for Signature {
 }
 
 impl Signature {
+    pub fn image(&self) -> &str {
+        match self {
+            Signature::PubKeys(s) => s.image.as_str(),
+            Signature::Keyless(s) => s.image.as_str(),
+            Signature::GithubActions(s) => s.image.as_str(),
+            Signature::KeylessPrefix(s) => s.image.as_str(),
+            Signature::Certificate(s) => s.image.as_str(),
+        }
+    }
+
     fn validate(&self) -> Result<(), String> {
         match self {
             Signature::PubKeys(pub_keys) => pub_keys.validate().map_err(|e| e.to_string()),

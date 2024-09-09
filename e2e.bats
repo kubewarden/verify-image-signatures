@@ -18,7 +18,7 @@
 
   [ "$status" -eq 0 ]
   [ $(expr "$output" : '.*"allowed":false.*') -ne 0 ]
-  [ $(expr "$output" : '.*"message":"Pod invalid-pod-name is not accepted: verification of image ghcr.io/kubewarden/test-verify-image-signatures:unsigned failed.*') -ne 0 ]
+  [ $(expr "$output" : '.*"message":"Resource invalid-pod-name is not accepted: verification of image ghcr.io/kubewarden/test-verify-image-signatures:unsigned failed.*') -ne 0 ]
 }
 
 @test "Mutate Pod definition" {
