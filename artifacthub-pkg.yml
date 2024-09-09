@@ -4,16 +4,16 @@
 #
 # This config can be saved to its default location with:
 #   kwctl scaffold artifacthub > artifacthub-pkg.yml 
-version: 0.2.9
+version: 0.3.0
 name: verify-image-signatures
 displayName: Verify Image Signatures
-createdAt: 2024-06-27T12:43:21.116601507Z
+createdAt: 2024-09-09T07:20:08.259815499Z
 description: A Kubewarden Policy that verifies all the signatures of the container images referenced by a Pod
 license: Apache-2.0
 homeURL: https://github.com/kubewarden/verify-image-signatures
 containersImages:
 - name: policy
-  image: ghcr.io/kubewarden/policies/verify-image-signatures:v0.2.9
+  image: ghcr.io/kubewarden/policies/verify-image-signatures:v0.3.0
 keywords:
 - pod
 - signature
@@ -21,17 +21,17 @@ keywords:
 - trusted
 links:
 - name: policy
-  url: https://github.com/kubewarden/verify-image-signatures/releases/download/v0.2.9/policy.wasm
+  url: https://github.com/kubewarden/verify-image-signatures/releases/download/v0.3.0/policy.wasm
 - name: source
   url: https://github.com/kubewarden/verify-image-signatures
 install: |
   The policy can be obtained using [`kwctl`](https://github.com/kubewarden/kwctl):
   ```console
-  kwctl pull ghcr.io/kubewarden/policies/verify-image-signatures:v0.2.9
+  kwctl pull ghcr.io/kubewarden/policies/verify-image-signatures:v0.3.0
   ```
   Then, generate the policy manifest and tune it to your liking. For example:
   ```console
-  kwctl scaffold manifest -t ClusterAdmissionPolicy registry://ghcr.io/kubewarden/policies/verify-image-signatures:v0.2.9
+  kwctl scaffold manifest -t ClusterAdmissionPolicy registry://ghcr.io/kubewarden/policies/verify-image-signatures:v0.3.0
   ```
 maintainers:
 - name: Kubewarden developers
