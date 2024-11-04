@@ -20,7 +20,7 @@ pem = "3.0.4"
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 slog = "2.7"
-validator = { version = "0.18", features = ["derive"] }
+validator = { version = "0.19", features = ["derive"] }
 wildmatch = "2.3.3"
 
 [dev-dependencies]
