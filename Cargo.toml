@@ -14,13 +14,13 @@ anyhow = "1.0"
 k8s-openapi = { version = "0.24.0", default-features = false, features = [
   "v1_32",
 ] }
-kubewarden-policy-sdk = "0.11.3"
+kubewarden-policy-sdk = "0.12.0"
 lazy_static = "1.4"
 pem = "3.0.4"
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 slog = "2.7"
-validator = { version = "0.19", features = ["derive"] }
+validator = { version = "0.20", features = ["derive"] }
 wildmatch = "2.3.3"
 
 [dev-dependencies]
