@@ -493,14 +493,14 @@ mod tests {
         use kubewarden::host_capabilities::verification::{
             KeylessInfo, KeylessPrefixInfo, VerificationResponse,
         };
-        use std::collections::HashMap;
+        use std::collections::BTreeMap;
 
         // needed for creating mocks
         #[allow(dead_code)]
         pub fn verify_pub_keys_image(
             _image: &str,
             _pub_keys: Vec<String>,
-            _annotations: Option<HashMap<String, String>>,
+            _annotations: Option<BTreeMap<String, String>>,
         ) -> Result<VerificationResponse> {
             Ok(VerificationResponse {
                 is_trusted: true,
@@ -513,7 +513,7 @@ mod tests {
         pub fn verify_keyless_exact_match(
             _image: &str,
             _keyless: Vec<KeylessInfo>,
-            _annotations: Option<HashMap<String, String>>,
+            _annotations: Option<BTreeMap<String, String>>,
         ) -> Result<VerificationResponse> {
             Ok(VerificationResponse {
                 is_trusted: true,
@@ -526,7 +526,7 @@ mod tests {
         pub fn verify_keyless_prefix_match(
             _image: &str,
             _keyless_prefix: Vec<KeylessPrefixInfo>,
-            _annotations: Option<HashMap<String, String>>,
+            _annotations: Option<BTreeMap<String, String>>,
         ) -> Result<VerificationResponse> {
             Ok(VerificationResponse {
                 is_trusted: true,
@@ -540,7 +540,7 @@ mod tests {
             _image: &str,
             _owner: String,
             _repo: Option<String>,
-            _annotations: Option<HashMap<String, String>>,
+            _annotations: Option<BTreeMap<String, String>>,
         ) -> Result<VerificationResponse> {
             Ok(VerificationResponse {
                 is_trusted: true,
@@ -555,7 +555,7 @@ mod tests {
             _certificate: String,
             _certificate_chain: Option<Vec<String>>,
             _require_rekor_bundle: bool,
-            _annotations: Option<HashMap<String, String>>,
+            _annotations: Option<BTreeMap<String, String>>,
         ) -> Result<VerificationResponse> {
             Ok(VerificationResponse {
                 is_trusted: true,

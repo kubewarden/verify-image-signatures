@@ -2,7 +2,7 @@ use kubewarden::host_capabilities::crypto::{
     BoolWithReason, Certificate as SDKCert, CertificateEncoding,
 };
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::{fmt, str};
 
 use super::validation_helpers::validate_vector_of_pem_strings;
@@ -32,7 +32,7 @@ pub(crate) struct Certificate {
     /// verification process.
     pub(crate) require_rekor_bundle: bool,
     /// Optional - Annotations that must have been provided by all signers when they signed the OCI artifact
-    pub(crate) annotations: Option<HashMap<String, String>>,
+    pub(crate) annotations: Option<BTreeMap<String, String>>,
 }
 
 impl fmt::Display for Certificate {

@@ -1,6 +1,6 @@
 use kubewarden::host_capabilities::verification::KeylessInfo;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::fmt;
 use validator::Validate;
 
@@ -10,7 +10,7 @@ pub(crate) struct Keyless {
     #[validate(length(min = 1))]
     pub(crate) image: String,
     pub(crate) keyless: Vec<KeylessInfo>,
-    pub(crate) annotations: Option<HashMap<String, String>>,
+    pub(crate) annotations: Option<BTreeMap<String, String>>,
 }
 
 impl fmt::Display for Keyless {
