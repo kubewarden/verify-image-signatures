@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::fmt;
 use validator::Validate;
 
@@ -21,7 +21,7 @@ pub(crate) struct GithubActions {
     /// GitHub Actions information that must be found in the signature
     pub(crate) github_actions: KeylessGithubActionsInfo,
     /// Optional - Annotations that must have been provided by all signers when they signed the OCI artifact
-    pub(crate) annotations: Option<HashMap<String, String>>,
+    pub(crate) annotations: Option<BTreeMap<String, String>>,
 }
 
 impl fmt::Display for GithubActions {

@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::fmt;
 use validator::Validate;
 
@@ -12,7 +12,7 @@ pub(crate) struct PubKeys {
     pub(crate) image: String,
     #[validate(length(min = 1), custom(function = "validate_vector_of_pem_strings"))]
     pub(crate) pub_keys: Vec<String>,
-    pub(crate) annotations: Option<HashMap<String, String>>,
+    pub(crate) annotations: Option<BTreeMap<String, String>>,
 }
 
 impl fmt::Display for PubKeys {
