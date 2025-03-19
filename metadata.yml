@@ -26,6 +26,7 @@ annotations:
   # kubewarden specific
   io.kubewarden.policy.ociUrl: ghcr.io/kubewarden/policies/verify-image-signatures
   io.kubewarden.policy.title: verify-image-signatures
+  io.kubewarden.policy.version: 0.3.1
   io.kubewarden.policy.description:
     A Kubewarden Policy that verifies all the signatures
     of the container images referenced by a Pod
