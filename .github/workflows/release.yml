@@ -29,5 +29,5 @@ jobs:
     needs: release
     uses: kubewarden/github-actions/.github/workflows/reusable-release-policy-catalog.yml@061457443f381a6c92489003d1d89c67ac32ad51 # v4.3.0
     secrets:
-      # Required to dispatch the release event to the policy-catalog repository
-      WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
+      APP_ID: ${{ secrets.APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
