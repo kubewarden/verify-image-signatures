@@ -22,7 +22,7 @@ jobs:
       packages: write
       # Required by cosign keyless signing
       id-token: write
-    uses: kubewarden/github-actions/.github/workflows/reusable-release-policy-rust.yml@reuse-draft-release
+    uses: kubewarden/github-actions/.github/workflows/reusable-release-policy-rust.yml@a856b31e3c8d62419e6c2fa325dbd346fec21af5 # v4.4.0
     with:
       oci-target: ghcr.io/${{ github.repository_owner }}/policies/verify-image-signatures
 
