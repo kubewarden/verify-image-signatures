@@ -1,6 +1,6 @@
 [package]
 name = "verify-image-signatures"
-version = "0.3.3-rc1"
+version = "1.0.0"
 authors = ["Kubewarden Developers <kubewarden@suse.de>"]
 edition = "2021"
 
