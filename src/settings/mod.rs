@@ -55,7 +55,7 @@ impl fmt::Display for Signature {
             Signature::Certificate(cert) => cert.to_string(),
         };
 
-        write!(f, "{}", detailed_display)
+        write!(f, "{detailed_display}")
     }
 }
 
@@ -96,9 +96,11 @@ impl kubewarden::settings::Validatable for Settings {
         let validation_errors: Vec<String> = self
             .signatures
             .iter()
-            .filter_map(|s| match s.validate() {
-                Ok(_) => None,
-                Err(e) => Some(format!("{}: {:?}", s, e)),
+            .filter_map(|s| -> Option<String> {
+                match s.validate() {
+                    Ok(_) => None,
+                    Err(e) => Some(format!("{s}: {e:?}")),
+                }
             })
             .collect();
 
