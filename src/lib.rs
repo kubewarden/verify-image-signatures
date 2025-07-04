@@ -432,8 +432,7 @@ fn handle_verification_response<T>(
         ),
         Err(e) => {
             policy_verification_errors.push(format!(
-                "verification of image {} failed: {}",
-                container_image, e
+                "verification of image {container_image} failed: {e}"
             ));
         }
     };
