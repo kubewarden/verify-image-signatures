@@ -455,9 +455,9 @@ dependencies = [
 
 [[package]]
 name = "kubewarden-policy-sdk"
-version = "0.14.2"
+version = "0.14.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "57bf4e90f1039aa9ab55469a563f0904042a11454256ff7cc67beb667afaeaf4"
+checksum = "8c649f3e88af2235f54d08b223f64ba831977f3cd2b6aae7b6b059cbfc1c9133"
 dependencies = [
  "anyhow",
  "cfg-if",
