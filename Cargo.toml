@@ -1,6 +1,6 @@
 [package]
 name = "verify-image-signatures"
-version = "1.0.3"
+version = "1.0.4"
 authors = ["Kubewarden Developers <cncf-kubewarden-maintainers@lists.cncf.io>"]
 edition = "2021"
 
