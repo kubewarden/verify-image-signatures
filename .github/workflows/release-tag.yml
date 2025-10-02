@@ -14,4 +14,4 @@ name: Tag and Release on PR Merge
 jobs:
   test:
     name: release-tag
-    uses: kubewarden/github-actions/.github/workflows/reusable-release-tag.yml@0c3d96f5251f687de1bbe1cd29e86b8a47bd17a6 # v4.5.9
+    uses: kubewarden/github-actions/.github/workflows/reusable-release-tag.yml@73e92c9cf9059299619e79372b78eb09a5934fa0 # v4.5.11
