@@ -3,6 +3,12 @@
 
 # Kubewarden policy verify-image-signatures
 
+> [!IMPORTANT]  
+> Due to the [Cosign v3 migration](https://blog.sigstore.dev/cosign-3-0-available/), this policy only
+> verifies signatures performed with Cosign v2 if run with Kubewarden up to version `1.30` inclusive.
+>
+> Cosign v3 support will come with Kubewarden update of the policy-server image.
+
 ## Description
 
 This policy validates Sigstore signatures for containers, init container and ephemeral container that match the name provided
