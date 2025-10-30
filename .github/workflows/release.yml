@@ -11,7 +11,7 @@ name: Release policy
 jobs:
   test:
     name: run tests and linters
-    uses: kubewarden/github-actions/.github/workflows/reusable-test-policy-rust.yml@73e92c9cf9059299619e79372b78eb09a5934fa0 # v4.5.11
+    uses: kubewarden/github-actions/.github/workflows/reusable-test-policy-rust.yml@847a8b8af7715a709c56426d3d298a90d7a6dad3 # v4.5.13
 
   release:
     needs: test
@@ -22,13 +22,13 @@ jobs:
       packages: write
       # Required by cosign keyless signing
       id-token: write
-    uses: kubewarden/github-actions/.github/workflows/reusable-release-policy-rust.yml@73e92c9cf9059299619e79372b78eb09a5934fa0 # v4.5.11
+    uses: kubewarden/github-actions/.github/workflows/reusable-release-policy-rust.yml@847a8b8af7715a709c56426d3d298a90d7a6dad3 # v4.5.13
     with:
       oci-target: ghcr.io/${{ github.repository_owner }}/policies/verify-image-signatures
 
   release-catalog:
     needs: release
-    uses: kubewarden/github-actions/.github/workflows/reusable-release-policy-catalog.yml@73e92c9cf9059299619e79372b78eb09a5934fa0 # v4.5.11
+    uses: kubewarden/github-actions/.github/workflows/reusable-release-policy-catalog.yml@847a8b8af7715a709c56426d3d298a90d7a6dad3 # v4.5.13
     secrets:
       APP_ID: ${{ secrets.APP_ID }}
       APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
